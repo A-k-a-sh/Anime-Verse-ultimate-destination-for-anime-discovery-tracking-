@@ -15,7 +15,9 @@ const AnimeGrid = ({ anime, loading = false, columns = 5, type = 'anime' }) => {
     return (
       <div className="text-center py-20">
         <div className="text-6xl mb-4">🔍</div>
-        <h3 className="text-2xl font-semibold text-gray-300 mb-2">No Anime Found</h3>
+        <h3 className="text-2xl font-semibold text-gray-300 mb-2">
+          {type === 'manga' ? 'No Manga Found' : 'No Anime Found'}
+        </h3>
         <p className="text-gray-400">Try adjusting your filters or search query</p>
       </div>
     );
@@ -29,8 +31,13 @@ const AnimeGrid = ({ anime, loading = false, columns = 5, type = 'anime' }) => {
 
   return (
     <div className={`grid ${gridClass} gap-6`}>
-      {anime.map((item) => (
-        <AnimeCard key={item.mal_id} anime={item} type={type} />
+      {anime.map((item, index) => (
+        <AnimeCard 
+          key={item.malId || item.mal_id || `item-${index}`} 
+          anime={item} 
+          type={type} 
+          index={index}
+        />
       ))}
     </div>
   );

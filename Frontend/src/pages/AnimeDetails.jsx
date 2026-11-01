@@ -25,6 +25,8 @@ const AnimeDetails = () => {
   const [recommendations, setRecommendations] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingCharacters, setLoadingCharacters] = useState(true);
+  const [loadingStaff, setLoadingStaff] = useState(true);
   const [loadingRecommendations, setLoadingRecommendations] = useState(true);
   const [loadingReviews, setLoadingReviews] = useState(true);
   const [showFullSynopsis, setShowFullSynopsis] = useState(false);
@@ -47,11 +49,21 @@ const AnimeDetails = () => {
         setLoading(false);
 
         // Fetch sub-resources in parallel non-blocking
-        Promise.allSettled([
-          animeService.getCharacters(id).then(res => setCharacters(res.data || [])),
-          animeService.getStaff(id).then(res => setStaff(res.data || [])),
-          animeService.getPictures(id).then(res => setPictures(res.data || []))
-        ]);
+        setLoadingCharacters(true);
+        animeService.getCharacters(id)
+          .then(res => setCharacters(res.data || []))
+          .catch(err => { console.error('Error fetching characters:', err); setCharacters([]); })
+          .finally(() => setLoadingCharacters(false));
+
+        setLoadingStaff(true);
+        animeService.getStaff(id)
+          .then(res => setStaff(res.data || []))
+          .catch(err => { console.error('Error fetching staff:', err); setStaff([]); })
+          .finally(() => setLoadingStaff(false));
+
+        animeService.getPictures(id)
+          .then(res => setPictures(res.data || []))
+          .catch(err => { console.error('Error fetching pictures:', err); setPictures([]); });
 
         // Load recommendations and reviews in background with retry logic
         fetchRecommendationsWithRetry(id);
@@ -379,50 +391,71 @@ const AnimeDetails = () => {
             )}
 
             {/* Characters Section */}
-            {characters.length > 0 && (
-              <section className="bg-dark-200 rounded-lg p-6">
-                <h2 className="text-2xl font-bold text-white mb-4">Characters</h2>
+            <section className="bg-dark-200 rounded-lg p-6">
+              <h2 className="text-2xl font-bold text-white mb-4">Characters</h2>
+              {loadingCharacters ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+              ) : characters.length > 0 ? (
                 <Carousel
                   items={characters.slice(0, 12)}
                   slidesToShow={5}
                   renderItem={(character) => <CharacterCard character={character} />}
                 />
-              </section>
-            )}
+              ) : (
+                <p className="text-gray-400 text-center py-6 text-sm">No characters listed for this title.</p>
+              )}
+            </section>
 
             {/* Staff Section (Collapsible) */}
-            {staff.length > 0 && (
-              <section className="bg-dark-200 rounded-lg p-6">
-                <button
-                  onClick={() => setShowStaff(!showStaff)}
-                  className="w-full flex items-center justify-between text-2xl font-bold text-white mb-4 hover:text-gray-300 transition-colors"
-                >
-                  <span>Staff & Production ({staff.length})</span>
-                  {showStaff ? (
-                    <ChevronUpIcon className="w-6 h-6" />
-                  ) : (
-                    <ChevronDownIcon className="w-6 h-6" />
-                  )}
-                </button>
-                {showStaff && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {staff.map((member, index) => (
-                      <div key={index} className="flex items-center gap-3 p-3 bg-dark-100 rounded-lg">
-                        <img
-                          src={member.person.images?.jpg?.image_url}
-                          alt={member.person.name}
-                          className="w-12 h-12 rounded-full object-cover"
-                        />
-                        <div className="flex-1">
-                          <p className="font-semibold text-white text-sm">{member.person.name}</p>
-                          <p className="text-xs text-gray-400">{member.positions.join(', ')}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+            <section className="bg-dark-200 rounded-lg p-6">
+              <button
+                onClick={() => setShowStaff(!showStaff)}
+                className="w-full flex items-center justify-between text-2xl font-bold text-white mb-4 hover:text-gray-300 transition-colors"
+              >
+                <span>Staff & Production {staff.length > 0 ? `(${staff.length})` : ''}</span>
+                {showStaff ? (
+                  <ChevronUpIcon className="w-6 h-6" />
+                ) : (
+                  <ChevronDownIcon className="w-6 h-6" />
                 )}
-              </section>
-            )}
+              </button>
+              {showStaff && (
+                loadingStaff ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                ) : staff.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {staff.map((member, index) => {
+                      const personName = member.person?.name || member.name || 'Unknown';
+                      const personImg = member.person?.images?.jpg?.image_url || member.imageUrl;
+                      const positions = Array.isArray(member.positions) ? member.positions.join(', ') : (member.position || member.role || 'Staff');
+                      return (
+                        <div key={index} className="flex items-center gap-3 p-3 bg-dark-100 rounded-lg">
+                          {personImg ? (
+                            <img
+                              src={personImg}
+                              alt={personName}
+                              className="w-12 h-12 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded-full bg-dark-200" />
+                          )}
+                          <div className="flex-1">
+                            <p className="font-semibold text-white text-sm">{personName}</p>
+                            <p className="text-xs text-gray-400">{positions}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-gray-400 text-center py-6 text-sm">No staff information available for this title.</p>
+                )
+              )}
+            </section>
 
             {/* MAL Reviews Section */}
             <section className="bg-dark-200 rounded-lg p-6">

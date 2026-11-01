@@ -3,6 +3,12 @@ import { Link } from 'react-router-dom';
 const InfoSidebar = ({ anime }) => {
   if (!anime) return null;
 
+  const getName = (item) => {
+    if (!item) return '';
+    if (typeof item === 'string') return item;
+    return item.name || '';
+  };
+
   const InfoRow = ({ label, value }) => {
     if (!value) return null;
     return (
@@ -16,7 +22,7 @@ const InfoSidebar = ({ anime }) => {
   const formatDate = (dateString) => {
     if (!dateString) return null;
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    return isNaN(date.getTime()) ? dateString : date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
   const getStatusColor = (status) => {
@@ -34,6 +40,10 @@ const InfoSidebar = ({ anime }) => {
         return 'bg-gray-500/20 text-gray-300 border-gray-500/30';
     }
   };
+
+  const validStudios = (anime.studios || []).map(getName).filter(Boolean);
+  const validProducers = (anime.producers || []).map(getName).filter(Boolean);
+  const validLicensors = (anime.licensors || []).map(getName).filter(name => name && name !== 'None found');
 
   return (
     <div className="bg-dark-200 rounded-lg p-6 sticky top-24">
@@ -79,45 +89,30 @@ const InfoSidebar = ({ anime }) => {
         <InfoRow label="Duration" value={anime.duration} />
         <InfoRow label="Source" value={anime.source} />
         
-        {anime.studios && anime.studios.length > 0 && (
+        {validStudios.length > 0 && (
           <div className="py-2 border-b border-gray-700/50">
             <dt className="text-sm text-gray-400 mb-1">Studios</dt>
-            <dd className="text-sm text-white">
-              {anime.studios.map((studio, index) => (
-                <span key={studio.mal_id || `studio-${index}`}>
-                  {studio.name}
-                  {index < anime.studios.length - 1 && ', '}
-                </span>
-              ))}
+            <dd className="text-sm text-white font-medium">
+              {validStudios.join(', ')}
             </dd>
           </div>
         )}
         
-        {anime.producers && anime.producers.length > 0 && (
+        {validProducers.length > 0 && (
           <div className="py-2 border-b border-gray-700/50">
             <dt className="text-sm text-gray-400 mb-1">Producers</dt>
-            <dd className="text-sm text-white">
-              {anime.producers.slice(0, 3).map((producer, index) => (
-                <span key={producer.mal_id || `producer-${index}`}>
-                  {producer.name}
-                  {index < Math.min(2, anime.producers.length - 1) && ', '}
-                </span>
-              ))}
-              {anime.producers.length > 3 && ` +${anime.producers.length - 3} more`}
+            <dd className="text-sm text-white font-medium">
+              {validProducers.slice(0, 3).join(', ')}
+              {validProducers.length > 3 && ` +${validProducers.length - 3} more`}
             </dd>
           </div>
         )}
         
-        {anime.licensors && anime.licensors.length > 0 && anime.licensors[0].name !== 'None found' && (
+        {validLicensors.length > 0 && (
           <div className="py-2 border-b border-gray-700/50">
             <dt className="text-sm text-gray-400 mb-1">Licensors</dt>
-            <dd className="text-sm text-white">
-              {anime.licensors.map((licensor, index) => (
-                <span key={licensor.mal_id || `licensor-${index}`}>
-                  {licensor.name}
-                  {index < anime.licensors.length - 1 && ', '}
-                </span>
-              ))}
+            <dd className="text-sm text-white font-medium">
+              {validLicensors.join(', ')}
             </dd>
           </div>
         )}
@@ -130,15 +125,20 @@ const InfoSidebar = ({ anime }) => {
         <div className="mt-4 pt-4 border-t border-gray-700/50">
           <h4 className="text-sm text-gray-400 mb-2">Genres</h4>
           <div className="flex flex-wrap gap-2">
-            {anime.genres.map((genre) => (
-              <Link
-                key={genre.mal_id}
-                to={`/browse?genre=${genre.mal_id}`}
-                className="px-2 py-1 bg-primary/20 hover:bg-primary/30 text-primary text-xs rounded border border-primary/30 transition-colors"
-              >
-                {genre}
-              </Link>
-            ))}
+            {anime.genres.map((genre, index) => {
+              const name = getName(genre);
+              const genreId = typeof genre === 'object' && genre.mal_id ? genre.mal_id : name;
+              if (!name) return null;
+              return (
+                <Link
+                  key={`${name}-${index}`}
+                  to={`/browse?genre=${encodeURIComponent(genreId)}`}
+                  className="px-2 py-1 bg-primary/20 hover:bg-primary/30 text-primary text-xs rounded border border-primary/30 transition-colors"
+                >
+                  {name}
+                </Link>
+              );
+            })}
           </div>
         </div>
       )}
@@ -148,14 +148,18 @@ const InfoSidebar = ({ anime }) => {
         <div className="mt-4">
           <h4 className="text-sm text-gray-400 mb-2">Themes</h4>
           <div className="flex flex-wrap gap-2">
-            {anime.themes.map((theme) => (
-              <span
-                key={theme.mal_id}
-                className="px-2 py-1 bg-secondary/20 text-secondary text-xs rounded border border-secondary/30"
-              >
-                {theme}
-              </span>
-            ))}
+            {anime.themes.map((theme, index) => {
+              const name = getName(theme);
+              if (!name) return null;
+              return (
+                <span
+                  key={`${name}-${index}`}
+                  className="px-2 py-1 bg-secondary/20 text-secondary text-xs rounded border border-secondary/30"
+                >
+                  {name}
+                </span>
+              );
+            })}
           </div>
         </div>
       )}
@@ -165,14 +169,18 @@ const InfoSidebar = ({ anime }) => {
         <div className="mt-4">
           <h4 className="text-sm text-gray-400 mb-2">Demographic</h4>
           <div className="flex flex-wrap gap-2">
-            {anime.demographics.map((demo) => (
-              <span
-                key={demo.mal_id}
-                className="px-2 py-1 bg-purple-500/20 text-purple-300 text-xs rounded border border-purple-500/30"
-              >
-                {demo}
-              </span>
-            ))}
+            {anime.demographics.map((demo, index) => {
+              const name = getName(demo);
+              if (!name) return null;
+              return (
+                <span
+                  key={`${name}-${index}`}
+                  className="px-2 py-1 bg-purple-500/20 text-purple-300 text-xs rounded border border-purple-500/30"
+                >
+                  {name}
+                </span>
+              );
+            })}
           </div>
         </div>
       )}
@@ -185,8 +193,8 @@ const InfoSidebar = ({ anime }) => {
             ⭐ {anime.score ? anime.score.toFixed(2) : 'N/A'}
           </span>
         </div>
-        {anime.scored_by && (
-          <p className="text-xs text-gray-500">{anime.scored_by.toLocaleString()} users</p>
+        {(anime.scored_by || anime.scoredBy) && (
+          <p className="text-xs text-gray-500">{(anime.scored_by || anime.scoredBy).toLocaleString()} users</p>
         )}
         {anime.rank && (
           <p className="text-sm text-gray-400 mt-2">Ranked #{anime.rank}</p>
