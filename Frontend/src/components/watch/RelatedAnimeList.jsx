@@ -106,3 +106,4 @@ const RelatedAnimeList = ({ recommendations = [], loading = false }) => {
 };
 
 export default RelatedAnimeList;
+

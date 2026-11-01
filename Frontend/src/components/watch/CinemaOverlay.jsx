@@ -40,3 +40,4 @@ const CinemaOverlay = ({ isLightsOff = false, onClose }) => {
 };
 
 export default CinemaOverlay;
+

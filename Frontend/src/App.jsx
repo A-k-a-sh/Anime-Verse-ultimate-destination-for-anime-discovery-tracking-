@@ -9,6 +9,7 @@ import Footer from './components/Footer';
 import Home from './pages/Home';
 import Browse from './pages/Browse';
 import AnimeDetails from './pages/AnimeDetails';
+import Watch from './pages/Watch';
 import CharacterDetails from './pages/CharacterDetails';
 import MangaBrowse from './pages/MangaBrowse';
 import MangaDetails from './pages/MangaDetails';
@@ -44,6 +45,8 @@ function App() {
                 <Route path="/browse" element={<Browse />} />
                 <Route path="/anime/top" element={<TopAnime />} />
                 <Route path="/anime/:id" element={<AnimeDetails />} />
+                <Route path="/watch/:id" element={<Watch />} />
+                <Route path="/watch/:id/:episode" element={<Watch />} />
                 <Route path="/character/:id" element={<CharacterDetails />} />
                 <Route path="/manga" element={<MangaBrowse />} />
                 <Route path="/manga/top" element={<TopManga />} />
