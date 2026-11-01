@@ -102,10 +102,7 @@ const transformAnimeData = (media) => {
 
 // Transform AniList Media to Manga schema
 const transformMangaData = (media) => {
-  const authors = media.staff?.edges?.map(e => ({
-    name: e.node?.name?.full,
-    type: e.role || 'Author'
-  })) || [];
+  const authors = media.staff?.edges?.map(e => e.node?.name?.full).filter(Boolean) || [];
 
   return {
     malId: media.idMal || media.id,
@@ -1052,3 +1049,4 @@ module.exports = {
   fetchCharacterById,
   getCharacterPictures
 };
+

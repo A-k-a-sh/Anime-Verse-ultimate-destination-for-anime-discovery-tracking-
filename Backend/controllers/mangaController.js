@@ -1,45 +1,160 @@
-const jikanApi = require('../utils/jikanApi');
+const Manga = require('../models/Manga');
+const aniListApi = require('../utils/aniListApi');
 
-// @desc    Search manga
-// @route   GET /api/manga/search
+// @desc    Search manga (Database-First with AniList fallback)
+// @route   GET /api/manga/search or GET /api/manga
 // @access  Public
 const searchManga = async (req, res, next) => {
   try {
     const { q, page = 1, limit = 25, type, status, order_by, sort, genre, genres } = req.query;
 
-    const filters = {
-      page,
-      limit,
-      type,
-      status,
-      order_by,
-      sort,
-      genre: genre || genres
-    };
+    const parsedPage = Math.max(parseInt(page) || 1, 1);
+    const parsedLimit = Math.min(Math.max(parseInt(limit) || 25, 1), 50);
+    const skip = (parsedPage - 1) * parsedLimit;
 
-    const result = await jikanApi.searchManga(q || '', filters);
+    const query = {};
 
-    res.json({
-      success: true,
-      data: result.data,
-      pagination: result.pagination
-    });
+    if (q && q.trim()) {
+      const trimmedQ = q.trim();
+      query.$or = [
+        { title: { $regex: trimmedQ, $options: 'i' } },
+        { titleEnglish: { $regex: trimmedQ, $options: 'i' } },
+        { titleJapanese: { $regex: trimmedQ, $options: 'i' } }
+      ];
+    }
+
+    if (status) {
+      const s = status.toLowerCase();
+      if (s === 'publishing' || s === 'releasing') {
+        query.status = { $in: ['Publishing', 'Releasing'] };
+      } else if (s === 'complete' || s === 'completed' || s === 'finished') {
+        query.status = { $in: ['Completed', 'Finished'] };
+      } else if (s === 'upcoming' || s === 'not yet published') {
+        query.status = { $in: ['Upcoming', 'Not yet published'] };
+      } else {
+        query.status = new RegExp(`^${status}$`, 'i');
+      }
+    }
+
+    if (type) {
+      query.type = new RegExp(`^${type}$`, 'i');
+    }
+
+    const genreParam = genre || genres;
+    if (genreParam) {
+      const genreList = genreParam.split(',').map(g => g.trim()).filter(Boolean);
+      if (genreList.length > 0) {
+        query.genres = { $in: genreList.map(g => new RegExp(`^${g}$`, 'i')) };
+      }
+    }
+
+    // Determine sort option
+    let sortOption = {};
+    const sortDirection = (sort && sort.toLowerCase() === 'asc') ? 1 : -1;
+
+    if (order_by === 'popularity') {
+      sortOption = { popularity: 1, score: -1 };
+    } else if (order_by === 'score') {
+      sortOption = { score: sortDirection, scoredBy: -1 };
+    } else if (order_by === 'title') {
+      sortOption = { title: sortDirection };
+    } else if (order_by === 'start_date' || order_by === 'year') {
+      sortOption = { 'published.from': sortDirection, score: -1 };
+    } else {
+      sortOption = { score: -1, scoredBy: -1 };
+    }
+
+    // 1. Query MongoDB first (Database-First: < 15ms)
+    const total = await Manga.countDocuments(query);
+    const results = await Manga.find(query)
+      .sort(sortOption)
+      .skip(skip)
+      .limit(parsedLimit);
+
+    if (results.length > 0) {
+      return res.json({
+        success: true,
+        data: results,
+        pagination: {
+          last_visible_page: Math.ceil(total / parsedLimit) || 1,
+          has_next_page: (parsedPage * parsedLimit) < total,
+          current_page: parsedPage,
+          total_items: total
+        }
+      });
+    }
+
+    // 2. Fallback to AniList API on cache miss
+    try {
+      const filters = {
+        page: parsedPage,
+        limit: parsedLimit,
+        type,
+        status,
+        order_by,
+        sort,
+        genre: genre || genres
+      };
+
+      const result = await aniListApi.searchManga(q || '', filters);
+      return res.json({
+        success: true,
+        data: result.data,
+        pagination: result.pagination
+      });
+    } catch (apiError) {
+      console.error('AniList Manga search fallback error:', apiError.message);
+      return res.json({
+        success: true,
+        data: [],
+        pagination: {
+          last_visible_page: 1,
+          has_next_page: false,
+          current_page: parsedPage,
+          total_items: 0
+        }
+      });
+    }
   } catch (error) {
-    next(error);
+    console.error('Manga search error:', error.message);
+    res.status(500).json({
+      success: false,
+      data: [],
+      pagination: { last_visible_page: 1, has_next_page: false, current_page: 1 },
+      message: error.message || 'Error occurred while searching manga.'
+    });
   }
 };
 
-// @desc    Get manga by ID
+// @desc    Get manga by ID (Database-First)
 // @route   GET /api/manga/:id
 // @access  Public
 const getMangaById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    
-    // Try API first with error handling
+    const malId = parseInt(id);
+
+    if (isNaN(malId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid manga ID'
+      });
+    }
+
+    // 1. Check MongoDB cache first (< 10ms)
+    const manga = await Manga.findOne({ malId });
+    if (manga) {
+      return res.json({
+        success: true,
+        data: manga,
+        cached: true
+      });
+    }
+
+    // 2. Fetch from AniList API and persist in MongoDB
     try {
-      const manga = await jikanApi.fetchMangaById(id);
-      if (!manga) {
+      const freshManga = await aniListApi.fetchMangaById(malId);
+      if (!freshManga) {
         return res.status(404).json({
           success: false,
           message: 'Manga not found'
@@ -47,40 +162,16 @@ const getMangaById = async (req, res, next) => {
       }
       return res.json({
         success: true,
-        data: manga
+        data: freshManga
       });
     } catch (apiError) {
-      // Fallback to cache if API fails
-      console.error('Manga API error, checking cache:', apiError.message);
-      const Manga = require('../models/Manga');
-      const cached = await Manga.findOne({ malId: parseInt(id) });
-      
-      if (cached) {
-        return res.json({
-          success: true,
-          data: cached,
-          cached: true
-        });
-      }
-      
-      // No cache - throw error to outer catch
-      throw apiError;
+      console.error(`AniList fetch error for manga ${malId}:`, apiError.message);
+      return res.status(502).json({
+        success: false,
+        message: 'Unable to fetch manga details from external provider.'
+      });
     }
   } catch (error) {
-    console.error('Manga fetch error:', error);
-    if (error.response?.status === 404) {
-      return res.status(404).json({
-        success: false,
-        message: 'Manga not found'
-      });
-    }
-    if (error.name === 'ValidationError' || error.name === 'CastError') {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid manga data',
-        error: error.message
-      });
-    }
     next(error);
   }
 };
@@ -91,7 +182,7 @@ const getMangaById = async (req, res, next) => {
 const getMangaPictures = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const pictures = await jikanApi.getMangaPictures(id);
+    const pictures = await aniListApi.getMangaPictures(id);
 
     res.json({
       success: true,
@@ -108,7 +199,7 @@ const getMangaPictures = async (req, res, next) => {
 const getMangaCharacters = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const characters = await jikanApi.getMangaCharacters(id);
+    const characters = await aniListApi.getMangaCharacters(id);
 
     res.json({
       success: true,
@@ -125,7 +216,7 @@ const getMangaCharacters = async (req, res, next) => {
 const getMangaRecommendations = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const recommendations = await jikanApi.getMangaRecommendations(id);
+    const recommendations = await aniListApi.getMangaRecommendations(id);
 
     res.json({
       success: true,
@@ -133,8 +224,6 @@ const getMangaRecommendations = async (req, res, next) => {
     });
   } catch (error) {
     console.error(`❌ Error fetching recommendations for manga ${req.params.id}:`, error.message);
-    console.error('Error details:', error.response?.data || error);
-    // Return empty array on error instead of failing
     res.json({
       success: true,
       data: [],
@@ -143,22 +232,74 @@ const getMangaRecommendations = async (req, res, next) => {
   }
 };
 
-// @desc    Get top manga
+// @desc    Get top manga (Database-First with AniList fallback)
 // @route   GET /api/manga/top
 // @access  Public
 const getTopManga = async (req, res, next) => {
   try {
-    const { page = 1, limit = 25 } = req.query;
-    
-    const result = await jikanApi.getTopManga(page, limit);
+    const { page = 1, limit = 25, refresh } = req.query;
+    const parsedLimit = Math.min(Math.max(parseInt(limit) || 25, 1), 50);
+    const parsedPage = Math.max(parseInt(page) || 1, 1);
+    const skip = (parsedPage - 1) * parsedLimit;
 
+    // 1. Query MongoDB first
+    const total = await Manga.countDocuments({ score: { $gt: 0 } });
+    const cached = await Manga.find({ score: { $gt: 0 } })
+      .sort({ score: -1, scoredBy: -1 })
+      .skip(skip)
+      .limit(parsedLimit);
+
+    if (cached.length > 0 && !refresh) {
+      return res.json({
+        success: true,
+        data: cached,
+        pagination: {
+          last_visible_page: Math.ceil(total / parsedLimit) || 1,
+          has_next_page: (parsedPage * parsedLimit) < total,
+          current_page: parsedPage,
+          total_items: total
+        },
+        cached: true
+      });
+    }
+
+    // 2. Fetch from AniList API if DB empty or refresh forced
+    try {
+      const result = await aniListApi.getTopManga(parsedPage, parsedLimit);
+      return res.json({
+        success: true,
+        data: result.data,
+        pagination: result.pagination,
+        cached: false
+      });
+    } catch (apiError) {
+      console.error('AniList getTopManga error:', apiError.message);
+      if (cached.length > 0) {
+        return res.json({
+          success: true,
+          data: cached,
+          pagination: {
+            last_visible_page: Math.ceil(total / parsedLimit) || 1,
+            has_next_page: (parsedPage * parsedLimit) < total,
+            current_page: parsedPage
+          },
+          cached: true
+        });
+      }
+      return res.json({
+        success: true,
+        data: [],
+        pagination: { last_visible_page: 1, has_next_page: false }
+      });
+    }
+  } catch (error) {
+    console.error('Error fetching top manga:', error.message);
     res.json({
       success: true,
-      data: result.data,
-      pagination: result.pagination
+      data: [],
+      pagination: { last_visible_page: 1, has_next_page: false },
+      message: 'Top manga temporarily unavailable.'
     });
-  } catch (error) {
-    next(error);
   }
 };
 
@@ -167,7 +308,7 @@ const getTopManga = async (req, res, next) => {
 // @access  Public
 const getRandomManga = async (req, res, next) => {
   try {
-    const manga = await jikanApi.getRandomManga();
+    const manga = await aniListApi.getRandomManga();
 
     res.json({
       success: true,

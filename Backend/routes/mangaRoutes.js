@@ -17,5 +17,6 @@ router.get('/:id/pictures', getMangaPictures);
 router.get('/:id/characters', getMangaCharacters);
 router.get('/:id/recommendations', getMangaRecommendations);
 router.get('/:id', getMangaById);
+router.get('/', searchManga);
 
 module.exports = router;
