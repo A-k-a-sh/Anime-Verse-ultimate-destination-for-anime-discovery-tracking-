@@ -19,6 +19,7 @@ const characterSchema = new mongoose.Schema({
   animeAppearances: [{
     malId: Number,
     title: String,
+    imageUrl: String,
     role: {
       type: String,
       enum: ['Main', 'Supporting']

@@ -38,14 +38,37 @@ const getCharacterById = async (req, res, next) => {
       }));
     }
     if (!charObj.anime && charObj.animeAppearances) {
-      charObj.anime = charObj.animeAppearances.map(a => ({
-        role: a.role,
-        anime: {
-          mal_id: a.malId,
-          title: a.title,
-          images: { jpg: { image_url: a.imageUrl || '' } }
-        }
-      }));
+      const missingIds = charObj.animeAppearances
+        .filter(a => !a.imageUrl && a.malId)
+        .map(a => a.malId);
+
+      const coverMap = new Map();
+      if (missingIds.length > 0) {
+        const Anime = require('../models/Anime');
+        const matchedAnime = await Anime.find({ malId: { $in: missingIds } }).select('malId imageUrl images');
+        matchedAnime.forEach(item => {
+          coverMap.set(item.malId, item.imageUrl || item.images?.jpg?.large_image_url || item.images?.jpg?.image_url);
+        });
+      }
+
+      charObj.anime = charObj.animeAppearances.map(a => {
+        const cover = a.imageUrl || coverMap.get(a.malId) || '';
+        return {
+          role: a.role,
+          anime: {
+            mal_id: a.malId,
+            malId: a.malId,
+            title: a.title,
+            imageUrl: cover,
+            images: {
+              jpg: {
+                image_url: cover,
+                large_image_url: cover
+              }
+            }
+          }
+        };
+      });
     }
     if (!charObj.name_kanji && charObj.nameKanji) {
       charObj.name_kanji = charObj.nameKanji;

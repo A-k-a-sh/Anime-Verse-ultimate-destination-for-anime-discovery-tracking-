@@ -139,7 +139,14 @@ const searchAnime = async (req, res, next) => {
     }
 
     if (rating) {
-      query.rating = { $regex: rating, $options: 'i' };
+      if (rating.toLowerCase() === 'rx' || rating.toLowerCase().includes('hentai')) {
+        query.$or = [
+          { rating: { $regex: 'rx', $options: 'i' } },
+          { genres: { $regex: 'hentai', $options: 'i' } }
+        ];
+      } else {
+        query.rating = { $regex: rating, $options: 'i' };
+      }
     }
 
     // Determine sort option
@@ -177,6 +184,22 @@ const searchAnime = async (req, res, next) => {
           total_items: total
         }
       });
+    }
+
+    // Fallback for hentai / Rx when page results are empty
+    if (rating && (rating.toLowerCase() === 'rx' || rating.toLowerCase().includes('hentai'))) {
+      try {
+        const hentaiResult = await aniListApi.getHentaiAnime(parsedPage, parsedLimit);
+        if (hentaiResult.data?.length > 0) {
+          return res.json({
+            success: true,
+            data: hentaiResult.data,
+            pagination: hentaiResult.pagination
+          });
+        }
+      } catch (err) {
+        console.error('Error fetching hentai from AniList:', err.message);
+      }
     }
 
     // Crucial Fallback: ONLY if results.length === 0 AND a specific search query 'q' was provided,

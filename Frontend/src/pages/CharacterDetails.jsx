@@ -38,6 +38,80 @@ const CharacterDetails = () => {
   const bio = character.about || 'No biography available.';
   const shouldTruncate = bio.length > 500;
 
+  const formatInlineLinks = (str) => {
+    if (!str) return '';
+    const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = linkRegex.exec(str)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(str.substring(lastIndex, match.index));
+      }
+
+      const linkText = match[1];
+      const linkUrl = match[2];
+      const charMatch = linkUrl.match(/\/character\/(\d+)/);
+
+      if (charMatch) {
+        parts.push(
+          <Link
+            key={match.index}
+            to={`/character/${charMatch[1]}`}
+            className="text-primary hover:underline font-medium"
+          >
+            {linkText}
+          </Link>
+        );
+      } else {
+        parts.push(
+          <span key={match.index} className="text-primary font-medium">
+            {linkText}
+          </span>
+        );
+      }
+
+      lastIndex = linkRegex.lastIndex;
+    }
+
+    if (lastIndex < str.length) {
+      parts.push(str.substring(lastIndex));
+    }
+
+    return parts;
+  };
+
+  const renderBioText = (text) => {
+    if (!text) return 'No biography available.';
+    const displayText = shouldTruncate && !showFullBio ? text.slice(0, 500) + '...' : text;
+    const paragraphs = displayText.split(/\n+/).filter(Boolean);
+
+    return (
+      <div className="space-y-3">
+        {paragraphs.map((p, pIdx) => {
+          const labelMatch = p.match(/^(__|\*\*)(.+?)(__|\*\*)\s*(.*)$/);
+          if (labelMatch) {
+            const label = labelMatch[2];
+            const rest = labelMatch[4];
+            return (
+              <div key={pIdx} className="text-sm">
+                <span className="font-semibold text-white mr-2">{label}</span>
+                <span className="text-gray-300">{formatInlineLinks(rest)}</span>
+              </div>
+            );
+          }
+
+          return (
+            <p key={pIdx} className="text-gray-300 leading-relaxed text-sm">
+              {formatInlineLinks(p)}
+            </p>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -73,9 +147,7 @@ const CharacterDetails = () => {
             {/* Biography */}
             <section className="bg-dark-200 rounded-lg p-6">
               <h2 className="text-2xl font-bold text-white mb-4">About</h2>
-              <p className="text-gray-300 leading-relaxed whitespace-pre-line">
-                {shouldTruncate && !showFullBio ? bio.slice(0, 500) + '...' : bio}
-              </p>
+              {renderBioText(bio)}
               {shouldTruncate && (
                 <button
                   onClick={() => setShowFullBio(!showFullBio)}

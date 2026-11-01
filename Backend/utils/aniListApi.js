@@ -350,6 +350,73 @@ const getTopAnime = async (page = 1, limit = 25) => {
   };
 };
 
+const getHentaiAnime = async (page = 1, limit = 25) => {
+  const parsedPage = Math.max(parseInt(page) || 1, 1);
+  const parsedLimit = Math.min(Math.max(parseInt(limit) || 25, 1), 50);
+
+  const query = `
+    query ($page: Int, $perPage: Int) {
+      Page(page: $page, perPage: $perPage) {
+        pageInfo {
+          currentPage
+          hasNextPage
+          lastPage
+        }
+        media(genre: "Hentai", type: ANIME, sort: POPULARITY_DESC) {
+          id
+          idMal
+          title { romaji english native }
+          description(asHtml: false)
+          coverImage { large extraLarge }
+          episodes
+          duration
+          status
+          format
+          startDate { year month day }
+          season
+          seasonYear
+          averageScore
+          popularity
+          genres
+          studios(isMain: true) { nodes { name } }
+        }
+      }
+    }
+  `;
+
+  try {
+    const data = await queryAniList(query, { page: parsedPage, perPage: parsedLimit });
+    const mediaList = data?.Page?.media || [];
+
+    const animeList = await Promise.all(
+      mediaList.map(async (item) => {
+        const animeData = transformAnimeData(item);
+        animeData.rating = 'Rx - Hentai';
+        if (!animeData.genres.includes('Hentai')) {
+          animeData.genres.push('Hentai');
+        }
+        return await Anime.findOneAndUpdate(
+          { malId: animeData.malId },
+          animeData,
+          { upsert: true, new: true }
+        );
+      })
+    );
+
+    return {
+      data: animeList,
+      pagination: {
+        last_visible_page: data?.Page?.pageInfo?.lastPage || 1,
+        has_next_page: data?.Page?.pageInfo?.hasNextPage || false,
+        current_page: parsedPage
+      }
+    };
+  } catch (err) {
+    console.error('Error fetching hentai anime:', err.message);
+    return { data: [], pagination: { last_visible_page: 1, has_next_page: false, current_page: parsedPage } };
+  }
+};
+
 const getSeasonalAnime = async (year, season, page = 1, limit = 25) => {
   const parsedPage = Math.max(parseInt(page) || 1, 1);
   const parsedLimit = Math.min(Math.max(parseInt(limit) || 25, 1), 50);
@@ -955,6 +1022,7 @@ const fetchCharacterById = async (characterId) => {
               id
               idMal
               title { english romaji }
+              coverImage { large extraLarge }
             }
             voiceActors(language: JAPANESE) {
               id
@@ -997,6 +1065,7 @@ const fetchCharacterById = async (characterId) => {
       animeAppearances: char.media?.edges?.map(e => ({
         malId: e.node?.idMal || e.node?.id,
         title: e.node?.title?.english || e.node?.title?.romaji,
+        imageUrl: e.node?.coverImage?.extraLarge || e.node?.coverImage?.large || '',
         role: e.characterRole === 'MAIN' ? 'Main' : 'Supporting'
       })) || [],
       voiceActors,
@@ -1095,6 +1164,7 @@ module.exports = {
   getAnimeEpisodes,
   getAnimeRecommendations,
   getAnimeReviews,
+  getHentaiAnime,
   syncCurrentlyAiring,
 
   // Manga

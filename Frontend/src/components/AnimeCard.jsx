@@ -23,17 +23,18 @@ const AnimeCard = ({ anime, index = 0, type = 'anime' }) => {
     >
       <Link to={`/${type}/${anime.malId || anime.mal_id}`}>
         {/* Image Container */}
-        <div className="relative aspect-[2/3] overflow-hidden">
+        <div className="relative aspect-[2/3] overflow-hidden bg-dark-100">
           {/* Skeleton loader */}
-          {!imageLoaded && (
+          {!imageLoaded && (anime.imageUrl || anime.images?.jpg?.large_image_url || anime.images?.jpg?.image_url) && (
             <div className="absolute inset-0 skeleton" />
           )}
           
           {/* Anime Image */}
           <img
-            src={anime.imageUrl || anime.images?.jpg?.large_image_url || anime.images?.jpg?.image_url}
+            src={anime.imageUrl || anime.images?.jpg?.large_image_url || anime.images?.jpg?.image_url || 'https://via.placeholder.com/300x450?text=No+Cover'}
             alt={anime.title || anime.titleEnglish}
             onLoad={handleImageLoad}
+            onError={() => setImageLoaded(true)}
             className={`w-full h-full object-cover transition-all duration-500 ${
               imageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'
             } group-hover:scale-110`}
