@@ -1022,6 +1022,66 @@ const getCharacterPictures = async (characterId) => {
   return [];
 };
 
+// ==========================================
+// SYNC CURRENTLY AIRING ANIME
+// ==========================================
+
+const syncCurrentlyAiring = async (targetPages = 2) => {
+  const query = `
+    query ($page: Int, $perPage: Int) {
+      Page(page: $page, perPage: $perPage) {
+        pageInfo {
+          currentPage
+          hasNextPage
+        }
+        media(type: ANIME, status: RELEASING, sort: POPULARITY_DESC) {
+          id
+          idMal
+          title { romaji english native }
+          description(asHtml: false)
+          coverImage { large extraLarge }
+          episodes
+          duration
+          status
+          format
+          startDate { year month day }
+          season
+          seasonYear
+          averageScore
+          popularity
+          genres
+          nextAiringEpisode { episode timeUntilAiring airingAt }
+          studios(isMain: true) { nodes { name } }
+        }
+      }
+    }
+  `;
+
+  let updatedCount = 0;
+  for (let page = 1; page <= targetPages; page++) {
+    const data = await queryAniList(query, { page, perPage: 25 });
+    const mediaList = data?.Page?.media || [];
+    if (mediaList.length === 0) break;
+
+    for (const item of mediaList) {
+      const animeData = transformAnimeData(item);
+      if (item.nextAiringEpisode?.episode && item.nextAiringEpisode.episode > 1) {
+        animeData.episodes = item.nextAiringEpisode.episode - 1;
+      }
+      await Anime.findOneAndUpdate(
+        { malId: animeData.malId },
+        { $set: animeData },
+        { upsert: true, new: true }
+      );
+      updatedCount++;
+    }
+
+    if (!data?.Page?.pageInfo?.hasNextPage) break;
+  }
+
+  return { updatedCount };
+};
+
 module.exports = {
   // Anime
   fetchAnimeById,
@@ -1035,6 +1095,7 @@ module.exports = {
   getAnimeEpisodes,
   getAnimeRecommendations,
   getAnimeReviews,
+  syncCurrentlyAiring,
 
   // Manga
   fetchMangaById,

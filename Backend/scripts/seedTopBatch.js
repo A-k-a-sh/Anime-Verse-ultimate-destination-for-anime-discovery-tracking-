@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const Anime = require('../models/Anime');
-const jikanApi = require('../utils/jikanApi');
+const aniListApi = require('../utils/aniListApi');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
@@ -8,7 +8,7 @@ const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const seedTopBatch = async () => {
   try {
-    console.log('🌱 Starting Top Anime Batch Seeder (up to 1,000 anime)...');
+    console.log('🌱 Starting Top Anime Batch Seeder via AniList (up to 1,000 anime)...');
 
     const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/anime-site';
     await mongoose.connect(mongoUri);
@@ -22,7 +22,7 @@ const seedTopBatch = async () => {
 
     for (let page = 1; page <= targetPages; page++) {
       try {
-        const result = await jikanApi.getTopAnime(page, 25);
+        const result = await aniListApi.getTopAnime(page, 25);
         const count = result.data ? result.data.length : 0;
         totalItemsFetched += count;
 
@@ -30,11 +30,11 @@ const seedTopBatch = async () => {
         console.log(`Page ${page}/${targetPages} cached (${count} items fetched, Total in DB: ${currentTotal})...`);
 
         if (result.pagination && !result.pagination.has_next_page) {
-          console.log('ℹ️ Reached end of Jikan top anime catalog.');
+          console.log('ℹ️ Reached end of AniList top anime catalog.');
           break;
         }
 
-        // Wait 1 second between page requests to stay safely under Jikan rate limits
+        // Wait 1 second between page requests to stay well within AniList limits
         if (page < targetPages) {
           await delay(1000);
         }
