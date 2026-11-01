@@ -65,6 +65,13 @@ const Watch = () => {
     return anime.type === 'Movie' || anime.episodes === 1;
   }, [anime]);
 
+  const currentEpisodeInfo = useMemo(() => {
+    if (!episodeList || !Array.isArray(episodeList)) return null;
+    return episodeList.find((ep) => (ep.episode || ep.mal_id) === currentEpisode);
+  }, [episodeList, currentEpisode]);
+
+  const currentEpisodeTitle = currentEpisodeInfo?.title || currentEpisodeInfo?.fullTitle || '';
+
   // Initial redirect if no episode param provided in URL
   useEffect(() => {
     if (!episode && id) {
@@ -416,6 +423,29 @@ const Watch = () => {
         ========================================================================= */}
         {isTheater ? (
           <div className="space-y-4">
+            {/* Currently Playing Episode Header */}
+            <div className="flex flex-wrap items-center justify-between gap-2 pb-1 text-sm">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="px-2.5 py-0.5 rounded-md bg-primary/20 text-primary font-bold text-xs uppercase tracking-wide border border-primary/30 shrink-0">
+                  {isMovie ? 'Movie' : `Ep ${currentEpisode}`}
+                </span>
+                {currentEpisodeTitle ? (
+                  <span className="text-white font-semibold text-sm sm:text-base truncate" title={currentEpisodeTitle}>
+                    {currentEpisodeTitle}
+                  </span>
+                ) : (
+                  <span className="text-gray-300 font-medium text-sm truncate">
+                    {title} - Episode {currentEpisode}
+                  </span>
+                )}
+              </div>
+              {totalEpisodes && !isMovie && (
+                <span className="text-xs text-gray-500 font-medium shrink-0">
+                  {currentEpisode} / {totalEpisodes}
+                </span>
+              )}
+            </div>
+
             {/* Player Container */}
             <VideoPlayer
               containerRef={playerContainerRef}
@@ -560,6 +590,29 @@ const Watch = () => {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Left Column: Player & Meta (~70%) */}
             <div className="lg:col-span-8 xl:col-span-8 space-y-4">
+              {/* Currently Playing Episode Header */}
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-1 text-sm">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="px-2.5 py-0.5 rounded-md bg-primary/20 text-primary font-bold text-xs uppercase tracking-wide border border-primary/30 shrink-0">
+                    {isMovie ? 'Movie' : `Ep ${currentEpisode}`}
+                  </span>
+                  {currentEpisodeTitle ? (
+                    <span className="text-white font-semibold text-sm sm:text-base truncate" title={currentEpisodeTitle}>
+                      {currentEpisodeTitle}
+                    </span>
+                  ) : (
+                    <span className="text-gray-300 font-medium text-sm truncate">
+                      {title} - Episode {currentEpisode}
+                    </span>
+                  )}
+                </div>
+                {totalEpisodes && !isMovie && (
+                  <span className="text-xs text-gray-500 font-medium shrink-0">
+                    {currentEpisode} / {totalEpisodes}
+                  </span>
+                )}
+              </div>
+
               {/* Player Container */}
               <VideoPlayer
                 containerRef={playerContainerRef}

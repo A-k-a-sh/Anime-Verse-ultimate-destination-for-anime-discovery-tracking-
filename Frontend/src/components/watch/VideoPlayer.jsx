@@ -174,13 +174,16 @@ const VideoPlayer = ({
     activeServer === 'server1' ? 'Server 2 (MegaPlay)' : 'Server 1 (Zoko)';
 
   return (
-    <div
-      ref={containerRef}
-      className={`relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl transition-all duration-300 ${
-        isLightsOff ? 'z-50 shadow-[0_0_50px_rgba(139,92,246,0.35)]' : ''
-      }`}
-    >
-      {/* Failover Alert Banner */}
+    <div className="relative w-full aspect-video">
+      <div
+        ref={containerRef}
+        className={`w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl transition-all duration-300 ${
+          isLightsOff
+            ? 'fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[94vw] max-w-5xl shadow-[0_0_80px_rgba(139,92,246,0.55)] ring-1 ring-white/20'
+            : 'relative'
+        }`}
+      >
+        {/* Failover Alert Banner */}
       {hasError && (
         <div className="absolute top-0 inset-x-0 z-30 bg-red-950/90 border-b border-red-800 text-white px-4 py-2.5 flex items-center justify-between text-sm backdrop-blur-md">
           <div className="flex items-center gap-2">
@@ -233,6 +236,7 @@ const VideoPlayer = ({
           <ArrowsPointingOutIcon className="w-5 h-5" />
         )}
       </button>
+      </div>
     </div>
   );
 };
