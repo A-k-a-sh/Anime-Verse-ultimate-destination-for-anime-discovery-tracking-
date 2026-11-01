@@ -606,6 +606,31 @@ const getRandomAnime = async (req, res, next) => {
   }
 };
 
+// @desc    Sync currently airing anime episodes and scores (Cron / Automation)
+// @route   GET /api/anime/sync-airing
+// @access  Public
+const syncAiringAnime = async (req, res, next) => {
+  try {
+    const { pages = 2 } = req.query;
+    const targetPages = Math.min(Math.max(parseInt(pages) || 2, 1), 5);
+    const { updatedCount } = await aniListApi.syncCurrentlyAiring(targetPages);
+
+    res.json({
+      success: true,
+      message: `Successfully synchronized ${updatedCount} currently airing anime titles.`,
+      updatedCount,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error in syncAiringAnime:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to sync currently airing anime.',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   getAllAnime,
   searchAnime,
@@ -618,5 +643,6 @@ module.exports = {
   getAnimeReviews,
   getSeasonalAnime,
   getTopAnime,
-  getRandomAnime
+  getRandomAnime,
+  syncAiringAnime
 };

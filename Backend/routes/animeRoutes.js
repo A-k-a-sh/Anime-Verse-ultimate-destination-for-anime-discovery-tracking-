@@ -12,13 +12,15 @@ const {
   getAnimeReviews,
   getSeasonalAnime,
   getTopAnime,
-  getRandomAnime
+  getRandomAnime,
+  syncAiringAnime
 } = require('../controllers/animeController');
 
 // Order matters: specific routes before :id parameter routes
 router.get('/search', searchAnime);
 router.get('/top', getTopAnime);
 router.get('/random', getRandomAnime);
+router.get('/sync-airing', syncAiringAnime);
 router.get('/seasonal/:year/:season', getSeasonalAnime);
 router.get('/:id/pictures', getAnimePictures);
 router.get('/:id/characters', getAnimeCharacters);
