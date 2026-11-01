@@ -46,7 +46,7 @@ const Navbar = () => {
   };
 
   const navLinks = [
-    { name: 'Home', path: '/' },
+    { name: 'Home', path: '/home' },
     { 
       name: 'Anime', 
       hasDropdown: true,

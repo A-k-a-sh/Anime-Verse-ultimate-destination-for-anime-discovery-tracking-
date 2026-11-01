@@ -6,6 +6,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 
 // Pages (will be created)
+import Landing from './pages/Landing';
 import Home from './pages/Home';
 import Browse from './pages/Browse';
 import AnimeDetails from './pages/AnimeDetails';
@@ -41,7 +42,8 @@ function App() {
             <main className="flex-1 pt-16">
               <Routes>
                 {/* Public Routes */}
-                <Route path="/" element={<Home />} />
+                <Route path="/" element={<Landing />} />
+                <Route path="/home" element={<Home />} />
                 <Route path="/browse" element={<Browse />} />
                 <Route path="/anime/top" element={<TopAnime />} />
                 <Route path="/anime/:id" element={<AnimeDetails />} />
