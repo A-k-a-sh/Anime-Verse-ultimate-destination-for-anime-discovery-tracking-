@@ -1,19 +1,30 @@
+import { useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { PlayIcon, StarIcon } from '@heroicons/react/24/solid';
+import { PlayIcon, StarIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
 
 /**
  * Related / Recommended Anime List for Watch Page
+ * Horizontal X-Axis scrollable rail with smooth arrow navigation
  */
 const RelatedAnimeList = ({ recommendations = [], loading = false }) => {
+  const scrollRef = useRef(null);
+
+  const handleScroll = (direction) => {
+    if (scrollRef.current) {
+      const offset = direction === 'left' ? -380 : 380;
+      scrollRef.current.scrollBy({ left: offset, behavior: 'smooth' });
+    }
+  };
+
   if (loading) {
     return (
-      <div className="bg-dark-200 rounded-xl p-5 border border-white/5">
-        <h3 className="text-lg font-bold text-white mb-4">You May Also Like</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+      <div className="bg-dark-200 rounded-xl p-4 border border-white/5">
+        <h3 className="text-base font-bold text-white mb-3">You May Also Like</h3>
+        <div className="flex gap-3 overflow-hidden pb-1">
           {[...Array(6)].map((_, i) => (
             <div
               key={i}
-              className="aspect-[2/3] bg-dark-100 rounded-lg animate-pulse"
+              className="shrink-0 w-32 sm:w-36 aspect-[2/3] bg-dark-100 rounded-lg animate-pulse"
             />
           ))}
         </div>
@@ -26,7 +37,7 @@ const RelatedAnimeList = ({ recommendations = [], loading = false }) => {
   }
 
   // Normalize anime entries (can come from recommendations endpoint or anime search)
-  const items = recommendations.slice(0, 12).map((item) => {
+  const items = recommendations.slice(0, 18).map((item) => {
     const anime = item.entry || item;
     const malId = anime.mal_id || anime.malId;
     const title = anime.title || anime.titleEnglish || 'Unknown Title';
@@ -41,16 +52,40 @@ const RelatedAnimeList = ({ recommendations = [], loading = false }) => {
   });
 
   return (
-    <div className="bg-dark-200 rounded-xl p-5 border border-white/5">
-      <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-        <span>You May Also Like</span>
-      </h3>
+    <div className="bg-dark-200 rounded-xl p-4 border border-white/5">
+      {/* Header with Navigation Arrows */}
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-base font-bold text-white flex items-center gap-2">
+          <span>You May Also Like</span>
+        </h3>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => handleScroll('left')}
+            aria-label="Scroll left"
+            className="p-1 rounded-lg bg-dark-100 hover:bg-dark-300 text-gray-400 hover:text-white border border-white/5 transition-colors"
+          >
+            <ChevronLeftIcon className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => handleScroll('right')}
+            aria-label="Scroll right"
+            className="p-1 rounded-lg bg-dark-100 hover:bg-dark-300 text-gray-400 hover:text-white border border-white/5 transition-colors"
+          >
+            <ChevronRightIcon className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Horizontal Scrollable Rail */}
+      <div
+        ref={scrollRef}
+        className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent snap-x"
+      >
         {items.map((item) => (
           <div
             key={item.malId}
-            className="group relative bg-dark-100 rounded-lg overflow-hidden border border-white/5 hover:border-primary/50 transition-all duration-300 hover:-translate-y-1"
+            className="shrink-0 w-32 sm:w-36 snap-start group relative bg-dark-100 rounded-lg overflow-hidden border border-white/5 hover:border-primary/50 transition-all duration-300 hover:-translate-y-1"
           >
             <Link to={`/anime/${item.malId}`} className="block">
               {/* Image Container */}
@@ -83,7 +118,7 @@ const RelatedAnimeList = ({ recommendations = [], loading = false }) => {
                     className="p-2.5 bg-primary hover:bg-primary/90 text-white rounded-full shadow-lg transform scale-90 group-hover:scale-100 transition-transform"
                     title={`Watch ${item.title}`}
                   >
-                    <PlayIcon className="w-5 h-5" />
+                    <PlayIcon className="w-4 h-4" />
                   </Link>
                 </div>
               </div>
@@ -106,4 +141,3 @@ const RelatedAnimeList = ({ recommendations = [], loading = false }) => {
 };
 
 export default RelatedAnimeList;
-

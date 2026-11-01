@@ -24,7 +24,7 @@ const CinemaOverlay = ({ isLightsOff = false, onClose }) => {
   return (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-40 bg-black/90 backdrop-blur-sm transition-opacity duration-300 cursor-pointer"
+      className="fixed inset-0 z-[60] bg-black/90 backdrop-blur-sm transition-opacity duration-300 cursor-pointer"
       title="Click anywhere to turn lights on (Esc)"
     />
   );

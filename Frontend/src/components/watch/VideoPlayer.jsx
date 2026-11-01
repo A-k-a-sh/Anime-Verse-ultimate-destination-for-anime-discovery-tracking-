@@ -174,11 +174,11 @@ const VideoPlayer = ({
     activeServer === 'server1' ? 'Server 2 (Zoko)' : 'Server 1 (MegaPlay)';
 
   const lightsClass = isLightsOff
-    ? 'z-50 shadow-[0_0_80px_rgba(139,92,246,0.55)] ring-1 ring-white/20'
+    ? 'z-[70] shadow-[0_0_80px_rgba(139,92,246,0.55)] ring-1 ring-white/20'
     : '';
 
   const playerSizing = isTheater
-    ? 'w-full max-h-[70vh] aspect-video max-w-[calc(70vh*16/9)] mx-auto'
+    ? 'w-full max-h-[82vh] aspect-video mx-auto'
     : 'w-full aspect-video';
 
   return (
