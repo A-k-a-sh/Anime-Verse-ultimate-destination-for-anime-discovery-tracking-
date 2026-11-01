@@ -1,5 +1,5 @@
 const Anime = require('../models/Anime');
-const jikanApi = require('../utils/jikanApi');
+const aniListApi = require('../utils/aniListApi');
 
 // @desc    Get all anime with filters and pagination
 // @route   GET /api/anime
@@ -194,14 +194,14 @@ const searchAnime = async (req, res, next) => {
       };
 
       try {
-        const result = await jikanApi.searchAnime(q.trim(), filters);
+        const result = await aniListApi.searchAnime(q.trim(), filters);
         return res.json({
           success: true,
           data: result.data,
           pagination: result.pagination
         });
       } catch (apiError) {
-        console.error('Jikan API fallback error for search query:', q, apiError.message);
+        console.error('AniList API fallback error for search query:', q, apiError.message);
       }
     }
 
@@ -255,7 +255,7 @@ const getAnimeById = async (req, res, next) => {
       const isStale = (Date.now() - lastUpdatedTime) > 24 * 60 * 60 * 1000;
 
       if (isAiring && isStale) {
-        jikanApi.fetchAnimeById(malId, true).catch(err => {
+        aniListApi.fetchAnimeById(malId, true).catch(err => {
           console.warn(`Background revalidation failed for ${malId}:`, err.message);
         });
       }
@@ -264,7 +264,7 @@ const getAnimeById = async (req, res, next) => {
 
     // 3. Cache Miss (anime not in DB yet)
     try {
-      const freshAnime = await jikanApi.fetchAnimeById(malId);
+      const freshAnime = await aniListApi.fetchAnimeById(malId);
       if (!freshAnime) {
         return res.status(404).json({
           success: false,
@@ -273,7 +273,7 @@ const getAnimeById = async (req, res, next) => {
       }
       return res.json({ success: true, data: freshAnime });
     } catch (apiError) {
-      console.error(`Jikan API fetch error for anime ${malId}:`, apiError.message);
+      console.error(`AniList API fetch error for anime ${malId}:`, apiError.message);
       if (apiError.response?.status === 404) {
         return res.status(404).json({
           success: false,
@@ -302,7 +302,7 @@ const getAnimeById = async (req, res, next) => {
 const getAnimePictures = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const pictures = await jikanApi.getAnimePictures(id);
+    const pictures = await aniListApi.getAnimePictures(id);
 
     res.json({
       success: true,
@@ -319,7 +319,7 @@ const getAnimePictures = async (req, res, next) => {
 const getAnimeCharacters = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const characters = await jikanApi.getAnimeCharacters(id);
+    const characters = await aniListApi.getAnimeCharacters(id);
 
     res.json({
       success: true,
@@ -336,7 +336,7 @@ const getAnimeCharacters = async (req, res, next) => {
 const getAnimeStaff = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const staff = await jikanApi.getAnimeStaff(id);
+    const staff = await aniListApi.getAnimeStaff(id);
 
     res.json({
       success: true,
@@ -355,7 +355,7 @@ const getAnimeEpisodes = async (req, res, next) => {
     const { id } = req.params;
     const { page = 1 } = req.query;
     
-    const result = await jikanApi.getAnimeEpisodes(id, page);
+    const result = await aniListApi.getAnimeEpisodes(id, page);
 
     res.json({
       success: true,
@@ -373,7 +373,7 @@ const getAnimeEpisodes = async (req, res, next) => {
 const getAnimeRecommendations = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const recommendations = await jikanApi.getAnimeRecommendations(id);
+    const recommendations = await aniListApi.getAnimeRecommendations(id);
 
     res.json({
       success: true,
@@ -381,8 +381,6 @@ const getAnimeRecommendations = async (req, res, next) => {
     });
   } catch (error) {
     console.error(`❌ Error fetching recommendations for anime ${req.params.id}:`, error.message);
-    console.error('Error details:', error.response?.data || error);
-    // Return empty array on error instead of failing
     res.json({
       success: true,
       data: [],
@@ -391,7 +389,7 @@ const getAnimeRecommendations = async (req, res, next) => {
   }
 };
 
-// @desc    Get anime reviews from MAL
+// @desc    Get anime reviews from MAL / AniList
 // @route   GET /api/anime/:id/reviews
 // @access  Public
 const getAnimeReviews = async (req, res, next) => {
@@ -399,7 +397,7 @@ const getAnimeReviews = async (req, res, next) => {
     const { id } = req.params;
     const { page = 1 } = req.query;
     
-    const result = await jikanApi.getAnimeReviews(id, page);
+    const result = await aniListApi.getAnimeReviews(id, page);
 
     res.json({
       success: true,
@@ -408,8 +406,6 @@ const getAnimeReviews = async (req, res, next) => {
     });
   } catch (error) {
     console.error(`❌ Error fetching reviews for anime ${req.params.id}:`, error.message);
-    console.error('Error details:', error.response?.data || error);
-    // Return empty array on error instead of failing
     res.json({
       success: true,
       data: [],
@@ -425,18 +421,12 @@ const getAnimeReviews = async (req, res, next) => {
 const getSeasonalAnime = async (req, res, next) => {
   try {
     const { year, season } = req.params;
+    const s = (season || 'winter').toLowerCase();
     
-    // Check MongoDB cache first for this season
-    const seasonMap = {
-      'winter': 'Winter',
-      'spring': 'Spring', 
-      'summer': 'Summer',
-      'fall': 'Fall'
-    };
-    
+    // Check MongoDB cache first for this season (matching lowercase season in DB)
     const cached = await Anime.find({
       year: parseInt(year),
-      season: seasonMap[season.toLowerCase()]
+      season: s
     }).sort({ score: -1, popularity: 1 }).limit(25);
     
     if (cached.length > 0) {
@@ -445,13 +435,14 @@ const getSeasonalAnime = async (req, res, next) => {
         data: cached,
         pagination: {
           has_next_page: false,
-          current_page: 1
+          current_page: 1,
+          total_items: cached.length
         }
       });
     }
     
-    // Fallback to API if no cache
-    const result = await jikanApi.getSeasonalAnime(year, season);
+    // Fallback to AniList API if not in cache
+    const result = await aniListApi.getSeasonalAnime(year, s);
 
     res.json({
       success: true,
@@ -503,7 +494,7 @@ const getTopAnime = async (req, res, next) => {
 
     // Fetch fresh data from API if DB empty or refresh forced
     try {
-      const result = await jikanApi.getTopAnime(parsedPage, Math.min(parsedLimit, 25));
+      const result = await aniListApi.getTopAnime(parsedPage, Math.min(parsedLimit, 25));
       return res.json({
         success: true,
         data: result.data,
@@ -543,7 +534,7 @@ const getTopAnime = async (req, res, next) => {
 // @access  Public
 const getRandomAnime = async (req, res, next) => {
   try {
-    const anime = await jikanApi.getRandomAnime();
+    const anime = await aniListApi.getRandomAnime();
 
     res.json({
       success: true,
