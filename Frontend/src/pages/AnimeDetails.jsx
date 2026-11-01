@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { animeService } from '../services/animeService';
 import { watchlistService } from '../services/watchlistService';
 import { useAuth } from '../context/AuthContext';
+import { watchStorage } from '../utils/watchStorage';
 import InfoSidebar from '../components/InfoSidebar';
 import ImageGallery from '../components/ImageGallery';
 import CharacterCard from '../components/CharacterCard';
@@ -209,6 +210,29 @@ const AnimeDetails = () => {
     }
   };
 
+  // Determine watch progress & target episode for "Watch Now" / "Continue"
+  const isMovie = anime?.type === 'Movie' || anime?.episodes === 1;
+  const lastWatchedLocal = watchStorage.getLastWatched(id);
+  const epFromWatchlist = watchlistEntry?.episodesWatched || 0;
+  const totalEps = anime?.episodes || 0;
+  const highestWatched = Math.max(lastWatchedLocal || 0, epFromWatchlist);
+
+  let targetEpisode = 1;
+  let watchButtonLabel = isMovie ? 'Watch Movie' : 'Watch Episode 1';
+
+  if (isMovie) {
+    targetEpisode = 1;
+    watchButtonLabel = 'Watch Movie';
+  } else if (highestWatched > 0) {
+    if (totalEps > 0 && highestWatched >= totalEps) {
+      targetEpisode = 1;
+      watchButtonLabel = 'Re-watch (Ep 1)';
+    } else {
+      targetEpisode = highestWatched + 1;
+      watchButtonLabel = `Continue Ep ${targetEpisode}`;
+    }
+  }
+
   return (
     <div className="min-h-screen">
       {/* Hero Header Section */}
@@ -260,6 +284,14 @@ const AnimeDetails = () => {
 
               {/* Action Buttons */}
               <div className="flex flex-wrap gap-3">
+                <Link
+                  to={`/watch/${id}/${targetEpisode}`}
+                  className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-lg font-semibold transition-all duration-300 hover:scale-105 shadow-lg shadow-primary/30"
+                >
+                  <PlayIcon className="w-5 h-5 text-white" />
+                  <span>{watchButtonLabel}</span>
+                </Link>
+
                 <button 
                   onClick={handleAddToList}
                   className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold transition-all duration-300 hover:scale-105 shadow-lg ${
@@ -271,7 +303,7 @@ const AnimeDetails = () => {
                         : watchlistEntry.status === 'plan-to-watch'
                         ? 'bg-orange-500 hover:bg-orange-600 text-white'
                         : 'bg-red-500 hover:bg-red-600 text-white'
-                      : 'bg-primary hover:bg-primary/90 text-white'
+                      : 'bg-white/10 hover:bg-white/20 text-white border border-white/20'
                   }`}
                 >
                   {watchlistEntry ? (

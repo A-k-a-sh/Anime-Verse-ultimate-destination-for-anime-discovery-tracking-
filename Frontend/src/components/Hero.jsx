@@ -63,19 +63,19 @@ const Hero = ({ anime }) => {
           {/* Action Buttons */}
           <div className="flex flex-wrap gap-4">
             <Link
-              to={`/anime/${anime.mal_id}`}
+              to={`/watch/${anime.mal_id || anime.malId}/1`}
               className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl"
             >
               <PlayIcon className="w-5 h-5" />
-              <span>View Details</span>
+              <span>Watch Now</span>
             </Link>
-            <button className="flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300 border border-white/20">
-              <PlusIcon className="w-5 h-5" />
-              <span>Add to List</span>
-            </button>
-            <button className="flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white p-3 rounded-lg transition-all duration-300 border border-white/20">
-              <InformationCircleIcon className="w-6 h-6" />
-            </button>
+            <Link
+              to={`/anime/${anime.mal_id || anime.malId}`}
+              className="flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300 border border-white/20"
+            >
+              <InformationCircleIcon className="w-5 h-5" />
+              <span>Details</span>
+            </Link>
           </div>
 
           {/* Genres */}
