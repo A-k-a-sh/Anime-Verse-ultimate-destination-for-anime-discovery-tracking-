@@ -16,6 +16,7 @@ const animeSchema = new mongoose.Schema({
   synopsis: String,
   background: String,
   imageUrl: String,
+  bannerImage: String,
   trailerUrl: String,
   episodes: Number,
   duration: String,

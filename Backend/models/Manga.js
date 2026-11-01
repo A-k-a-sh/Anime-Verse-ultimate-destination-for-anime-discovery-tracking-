@@ -15,6 +15,7 @@ const mangaSchema = new mongoose.Schema({
   titleJapanese: String,
   synopsis: String,
   imageUrl: String,
+  bannerImage: String,
   type: {
     type: String,
     enum: ['Manga', 'Manhwa', 'Manhua', 'Novel', 'One-shot', 'Doujinshi', 'Light Novel']

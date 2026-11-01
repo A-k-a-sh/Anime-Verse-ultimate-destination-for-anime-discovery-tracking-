@@ -105,6 +105,7 @@ const MangaDetails = () => {
   }
 
   const imageUrl = manga.imageUrl || manga.images?.jpg?.large_image_url || manga.images?.jpg?.image_url;
+  const bannerUrl = manga.bannerImage || imageUrl;
   const synopsis = manga.synopsis || 'No synopsis available.';
   const shouldTruncateSynopsis = synopsis.length > 300;
 
@@ -133,7 +134,7 @@ const MangaDetails = () => {
       <div className="relative h-[400px] w-full overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: `url(${imageUrl})` }}
+          style={{ backgroundImage: `url(${bannerUrl})` }}
         >
           <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent"></div>
           <div className="absolute inset-0 bg-gradient-to-t from-[#0f0f23] via-transparent to-transparent"></div>

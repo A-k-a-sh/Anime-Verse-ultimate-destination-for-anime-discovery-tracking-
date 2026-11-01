@@ -186,7 +186,7 @@ const AnimeDetails = () => {
     );
   }
 
-  const backdropUrl = anime.imageUrl || anime.images?.jpg?.large_image_url || anime.images?.jpg?.image_url;
+  const backdropUrl = anime.bannerImage || anime.imageUrl || anime.images?.jpg?.large_image_url || anime.images?.jpg?.image_url;
   const trailerUrl = anime.trailerUrl || anime.trailer?.embed_url;
   const synopsis = anime.synopsis || 'No synopsis available.';
   const shouldTruncateSynopsis = synopsis.length > 300;

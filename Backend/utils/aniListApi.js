@@ -79,6 +79,7 @@ const transformAnimeData = (media) => {
     synopsis: media.description ? media.description.replace(/<[^>]*>?/gm, '').trim() : '',
     background: null,
     imageUrl: media.coverImage?.extraLarge || media.coverImage?.large,
+    bannerImage: media.bannerImage || null,
     trailerUrl: media.trailer?.site === 'youtube' ? `https://www.youtube.com/embed/${media.trailer.id}` : null,
     episodes: media.episodes || null,
     duration: media.duration ? `${media.duration} min` : null,
@@ -112,6 +113,7 @@ const transformMangaData = (media) => {
     titleJapanese: media.title?.native || null,
     synopsis: media.description ? media.description.replace(/<[^>]*>?/gm, '').trim() : '',
     imageUrl: media.coverImage?.extraLarge || media.coverImage?.large,
+    bannerImage: media.bannerImage || null,
     type: mapMangaType(media.format),
     chapters: media.chapters || null,
     volumes: media.volumes || null,
@@ -236,6 +238,7 @@ const searchAnime = async (searchQuery, filters = {}) => {
           idMal
           title { romaji english native }
           description(asHtml: false)
+          bannerImage
           coverImage { large extraLarge }
           episodes
           duration
@@ -312,6 +315,7 @@ const getTopAnime = async (page = 1, limit = 25) => {
           idMal
           title { romaji english native }
           description(asHtml: false)
+          bannerImage
           coverImage { large extraLarge }
           episodes
           duration
@@ -370,6 +374,7 @@ const getHentaiAnime = async (page = 1, limit = 25) => {
           idMal
           title { romaji english native }
           description(asHtml: false)
+          bannerImage
           coverImage { large extraLarge }
           episodes
           duration
@@ -438,6 +443,7 @@ const getSeasonalAnime = async (year, season, page = 1, limit = 25) => {
           idMal
           title { romaji english native }
           description(asHtml: false)
+          bannerImage
           coverImage { large extraLarge }
           episodes
           duration
@@ -948,6 +954,7 @@ const fetchMangaById = async (malId) => {
         idMal
         title { romaji english native }
         description(asHtml: false)
+        bannerImage
         coverImage { large extraLarge }
         chapters
         volumes
@@ -1003,6 +1010,7 @@ const searchManga = async (searchQuery, filters = {}) => {
           idMal
           title { romaji english native }
           description(asHtml: false)
+          bannerImage
           coverImage { large extraLarge }
           chapters
           volumes
@@ -1081,6 +1089,7 @@ const getTopManga = async (page = 1, limit = 25) => {
           idMal
           title { romaji english native }
           description(asHtml: false)
+          bannerImage
           coverImage { large extraLarge }
           chapters
           volumes
@@ -1177,6 +1186,7 @@ const getHentaiManga = async (page = 1, limit = 25) => {
           idMal
           title { romaji english native }
           description(asHtml: false)
+          bannerImage
           coverImage { large extraLarge }
           chapters
           volumes
@@ -1339,6 +1349,7 @@ const syncCurrentlyAiring = async (targetPages = 2) => {
           idMal
           title { romaji english native }
           description(asHtml: false)
+          bannerImage
           coverImage { large extraLarge }
           episodes
           duration

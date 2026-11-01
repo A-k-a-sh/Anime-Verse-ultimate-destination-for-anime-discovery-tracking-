@@ -94,7 +94,7 @@ const Home = () => {
                   <div
                     className="absolute inset-0 bg-cover bg-center transition-all duration-500"
                     style={{
-                      backgroundImage: `url(${currentAnime.imageUrl})`,
+                      backgroundImage: `url(${currentAnime.bannerImage || currentAnime.imageUrl})`,
                     }}
                   >
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent"></div>

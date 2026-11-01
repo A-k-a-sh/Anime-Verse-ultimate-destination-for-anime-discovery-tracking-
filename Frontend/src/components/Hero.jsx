@@ -4,7 +4,7 @@ import { PlayIcon, PlusIcon, InformationCircleIcon } from '@heroicons/react/24/s
 const Hero = ({ anime }) => {
   if (!anime) return null;
 
-  const backdropUrl = anime.images?.jpg?.large_image_url || anime.images?.jpg?.image_url;
+  const backdropUrl = anime.bannerImage || anime.imageUrl || anime.images?.jpg?.large_image_url || anime.images?.jpg?.image_url;
   const score = anime.score ? anime.score.toFixed(1) : 'N/A';
   const year = anime.year || new Date(anime.aired?.from).getFullYear() || 'N/A';
   const episodes = anime.episodes || '?';
