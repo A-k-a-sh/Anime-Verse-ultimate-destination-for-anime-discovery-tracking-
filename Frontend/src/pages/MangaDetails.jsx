@@ -257,9 +257,11 @@ const MangaDetails = () => {
               <div className="bg-dark-200 rounded-lg p-6">
                 <h2 className="text-2xl font-bold text-white mb-4">Characters</h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {characters.slice(0, 12).map((char) => (
-                    <CharacterCard key={char.character.mal_id} character={char} />
-                  ))}
+                  {characters.slice(0, 12).map((char, index) => {
+                    const charData = char.character || char;
+                    const charId = charData.mal_id || charData.malId || `char-${index}`;
+                    return <CharacterCard key={charId} character={char} />;
+                  })}
                 </div>
               </div>
             )}
@@ -269,16 +271,23 @@ const MangaDetails = () => {
               <h2 className="text-2xl font-bold text-white mb-4">You Might Also Like</h2>
               {recommendations.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                  {recommendations.map((rec) => (
-                    <Link key={rec.entry.mal_id} to={`/manga/${rec.entry.mal_id}`} className="group">
-                      <img 
-                        src={rec.entry.images?.jpg?.image_url} 
-                        alt={rec.entry.title} 
-                        className="w-full rounded-lg group-hover:scale-105 transition-transform"
-                      />
-                      <p className="text-sm text-white mt-2 truncate">{rec.entry.title}</p>
-                    </Link>
-                  ))}
+                  {recommendations.map((rec, index) => {
+                    const item = rec.entry || rec;
+                    const recId = item.mal_id || item.malId;
+                    const title = item.title || item.titleEnglish || 'Unknown Title';
+                    const img = item.images?.jpg?.image_url || item.imageUrl || '';
+                    if (!recId) return null;
+                    return (
+                      <Link key={`${recId}-${index}`} to={`/manga/${recId}`} className="group">
+                        <img 
+                          src={img} 
+                          alt={title} 
+                          className="w-full rounded-lg group-hover:scale-105 transition-transform aspect-[2/3] object-cover"
+                        />
+                        <p className="text-sm text-white mt-2 truncate">{title}</p>
+                      </Link>
+                    );
+                  })}
                 </div>
               ) : (
                 <p className="text-gray-400 text-center py-8">No recommendations available at the moment.</p>
@@ -295,6 +304,14 @@ const MangaDetails = () => {
                 <div><dt className="text-sm text-gray-400">Chapters</dt><dd className="text-white font-medium">{manga.chapters || '?'}</dd></div>
                 <div><dt className="text-sm text-gray-400">Volumes</dt><dd className="text-white font-medium">{manga.volumes || '?'}</dd></div>
                 <div><dt className="text-sm text-gray-400">Status</dt><dd className="text-white font-medium">{manga.status}</dd></div>
+                {manga.authors && manga.authors.length > 0 && (
+                  <div>
+                    <dt className="text-sm text-gray-400">Authors</dt>
+                    <dd className="text-white font-medium">
+                      {manga.authors.map(a => typeof a === 'string' ? a : a.name).filter(Boolean).join(', ')}
+                    </dd>
+                  </div>
+                )}
               </dl>
 
               {manga.genres && manga.genres.length > 0 && (

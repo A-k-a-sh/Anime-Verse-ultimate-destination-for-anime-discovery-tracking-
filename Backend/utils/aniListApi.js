@@ -772,7 +772,7 @@ const searchManga = async (searchQuery, filters = {}) => {
           hasNextPage
           lastPage
         }
-        media(search: $search, type: MANGA, sort: $sort, genre: $genre) {
+        media(search: $search, type: MANGA, sort: $sort, genre: $genre, isAdult: false) {
           id
           idMal
           title { romaji english native }
@@ -847,7 +847,7 @@ const getTopManga = async (page = 1, limit = 25) => {
           hasNextPage
           lastPage
         }
-        media(type: MANGA, sort: SCORE_DESC) {
+        media(type: MANGA, isAdult: false, sort: SCORE_DESC) {
           id
           idMal
           title { romaji english native }

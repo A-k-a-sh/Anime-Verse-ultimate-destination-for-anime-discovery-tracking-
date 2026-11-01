@@ -46,6 +46,9 @@ const searchManga = async (req, res, next) => {
       if (genreList.length > 0) {
         query.genres = { $in: genreList.map(g => new RegExp(`^${g}$`, 'i')) };
       }
+    } else {
+      // Exclude adult/hentai content by default unless explicitly filtered
+      query.genres = { $nin: ['Hentai', 'hentai'] };
     }
 
     // Determine sort option
@@ -53,7 +56,7 @@ const searchManga = async (req, res, next) => {
     const sortDirection = (sort && sort.toLowerCase() === 'asc') ? 1 : -1;
 
     if (order_by === 'popularity') {
-      sortOption = { popularity: 1, score: -1 };
+      sortOption = { popularity: -1, score: -1 };
     } else if (order_by === 'score') {
       sortOption = { score: sortDirection, scoredBy: -1 };
     } else if (order_by === 'title') {
@@ -61,7 +64,7 @@ const searchManga = async (req, res, next) => {
     } else if (order_by === 'start_date' || order_by === 'year') {
       sortOption = { 'published.from': sortDirection, score: -1 };
     } else {
-      sortOption = { score: -1, scoredBy: -1 };
+      sortOption = { popularity: -1, score: -1 };
     }
 
     // 1. Query MongoDB first (Database-First: < 15ms)
@@ -242,10 +245,11 @@ const getTopManga = async (req, res, next) => {
     const parsedPage = Math.max(parseInt(page) || 1, 1);
     const skip = (parsedPage - 1) * parsedLimit;
 
-    // 1. Query MongoDB first
-    const total = await Manga.countDocuments({ score: { $gt: 0 } });
-    const cached = await Manga.find({ score: { $gt: 0 } })
-      .sort({ score: -1, scoredBy: -1 })
+    // 1. Query MongoDB first (exclude adult/hentai from top manga by default)
+    const baseQuery = { score: { $gt: 0 }, genres: { $nin: ['Hentai', 'hentai'] } };
+    const total = await Manga.countDocuments(baseQuery);
+    const cached = await Manga.find(baseQuery)
+      .sort({ score: -1, scoredBy: -1, popularity: -1 })
       .skip(skip)
       .limit(parsedLimit);
 
