@@ -43,25 +43,15 @@ const AnimeDetails = () => {
         // Fetch main anime data first
         const animeData = await animeService.getById(id);
         setAnime(animeData.data);
-
-        // Helper function to add delay between requests
-        const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-        // Fetch core data sequentially with delays
-        await delay(400);
-        const charactersData = await animeService.getCharacters(id);
-        setCharacters(charactersData.data || []);
-
-        await delay(400);
-        const staffData = await animeService.getStaff(id);
-        setStaff(staffData.data || []);
-
-        await delay(400);
-        const picturesData = await animeService.getPictures(id);
-        setPictures(picturesData.data || []);
-
-        // Main content is loaded, set loading to false
+        // Main content is loaded, render page immediately
         setLoading(false);
+
+        // Fetch sub-resources in parallel non-blocking
+        Promise.allSettled([
+          animeService.getCharacters(id).then(res => setCharacters(res.data || [])),
+          animeService.getStaff(id).then(res => setStaff(res.data || [])),
+          animeService.getPictures(id).then(res => setPictures(res.data || []))
+        ]);
 
         // Load recommendations and reviews in background with retry logic
         fetchRecommendationsWithRetry(id);
@@ -75,7 +65,7 @@ const AnimeDetails = () => {
     const fetchRecommendationsWithRetry = async (animeId, retries = 2) => {
       setLoadingRecommendations(true);
       try {
-        await new Promise(resolve => setTimeout(resolve, 1600)); // Wait before fetching
+        await new Promise(resolve => setTimeout(resolve, 500)); // Non-blocking stagger
         const recsData = await animeService.getRecommendations(animeId);
         console.log('[AnimeDetails] Recommendations data:', recsData);
         setRecommendations(recsData.data?.slice(0, 10) || []);
@@ -83,7 +73,7 @@ const AnimeDetails = () => {
         console.error('Error fetching recommendations:', error);
         if (retries > 0) {
           console.log(`Retrying recommendations... (${retries} attempts left)`);
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          await new Promise(resolve => setTimeout(resolve, 1500));
           return fetchRecommendationsWithRetry(animeId, retries - 1);
         }
       } finally {
@@ -94,7 +84,7 @@ const AnimeDetails = () => {
     const fetchReviewsWithRetry = async (animeId, retries = 2) => {
       setLoadingReviews(true);
       try {
-        await new Promise(resolve => setTimeout(resolve, 2000)); // Wait before fetching
+        await new Promise(resolve => setTimeout(resolve, 800)); // Non-blocking stagger
         const reviewsData = await animeService.getReviews(animeId);
         console.log('[AnimeDetails] Reviews data:', reviewsData);
         setReviews(reviewsData.data?.slice(0, 5) || []);
@@ -102,7 +92,7 @@ const AnimeDetails = () => {
         console.error('Error fetching reviews:', error);
         if (retries > 0) {
           console.log(`Retrying reviews... (${retries} attempts left)`);
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          await new Promise(resolve => setTimeout(resolve, 1500));
           return fetchReviewsWithRetry(animeId, retries - 1);
         }
       } finally {
