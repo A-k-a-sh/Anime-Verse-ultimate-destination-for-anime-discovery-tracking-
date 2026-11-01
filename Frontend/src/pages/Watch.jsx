@@ -272,6 +272,9 @@ const Watch = () => {
     setIsTheater((prev) => {
       const nextVal = !prev;
       watchStorage.setTheaterMode(nextVal);
+      if (nextVal) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
       return nextVal;
     });
   };
@@ -390,7 +393,7 @@ const Watch = () => {
         }`}
       >
         {/* Breadcrumb Navigation */}
-        <div className="flex items-center justify-between py-4 text-xs text-gray-400">
+        <div className="flex items-center justify-between py-2.5 text-xs text-gray-400">
           <div className="flex items-center gap-2 overflow-hidden whitespace-nowrap">
             <Link to="/" className="hover:text-white transition-colors">
               Home

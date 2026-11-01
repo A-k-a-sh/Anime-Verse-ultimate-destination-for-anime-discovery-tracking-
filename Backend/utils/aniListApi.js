@@ -637,11 +637,82 @@ const getAnimePictures = async (malId) => {
   }
 };
 
+// In-memory cache for resolved anime episode lists
+const episodeCache = new Map();
+
+/**
+ * Fetch complete episode titles from Kitsu API by MyAnimeList ID mapping.
+ * Used when AniList streamingEpisodes has partial coverage (e.g. Naruto only having 26 eps).
+ */
+const fetchKitsuEpisodes = async (malId, totalEps) => {
+  try {
+    const mapRes = await fetch(
+      `https://kitsu.io/api/edge/mappings?filter[externalSite]=myanimelist/anime&filter[externalId]=${malId}&include=item`,
+      { headers: { 'Accept': 'application/vnd.api+json' } }
+    );
+    const mapData = await mapRes.json();
+    const item = mapData.included?.find((i) => i.type === 'anime');
+    if (!item?.id) return null;
+
+    const count = item.attributes?.episodeCount || totalEps || 12;
+    const pages = Math.ceil(Math.min(count, 500) / 20);
+    const requests = [];
+
+    for (let i = 0; i < pages; i++) {
+      const offset = i * 20;
+      requests.push(
+        fetch(
+          `https://kitsu.io/api/edge/anime/${item.id}/episodes?page[limit]=20&page[offset]=${offset}`,
+          { headers: { 'Accept': 'application/vnd.api+json' } }
+        )
+          .then((r) => r.json())
+          .then((d) => d.data || [])
+          .catch(() => [])
+      );
+    }
+
+    const results = await Promise.all(requests);
+    const flattened = results.flat();
+
+    if (flattened.length > 0) {
+      return flattened
+        .filter((ep) => ep.attributes?.number)
+        .sort((a, b) => a.attributes.number - b.attributes.number)
+        .map((ep) => {
+          const num = Number(ep.attributes.number);
+          const rawTitle =
+            ep.attributes.canonicalTitle ||
+            ep.attributes.titles?.en_us ||
+            ep.attributes.titles?.en_jp ||
+            ep.attributes.titles?.ja_jp ||
+            `Episode ${num}`;
+
+          return {
+            mal_id: num,
+            episode: num,
+            title: rawTitle,
+            fullTitle: `Episode ${num} - ${rawTitle}`,
+            thumbnail: ep.attributes.thumbnail?.original || null,
+          };
+        });
+    }
+  } catch (err) {
+    console.warn(`Kitsu episode fetch failed for malId ${malId}:`, err.message);
+  }
+  return null;
+};
+
 const getAnimeEpisodes = async (malId, page = 1) => {
-  const numericId = parseInt(malId);
+  const numericId = parseInt(malId, 10);
+  if (episodeCache.has(numericId)) {
+    return episodeCache.get(numericId);
+  }
+
   const anime = await Anime.findOne({ malId: numericId });
   const totalEps = anime?.episodes || 12;
 
+  // 1. Try AniList streamingEpisodes first
+  let aniListEpisodes = [];
   try {
     const query = `
       query ($idMal: Int) {
@@ -658,9 +729,8 @@ const getAnimeEpisodes = async (malId, page = 1) => {
     const streaming = result?.Media?.streamingEpisodes || [];
 
     if (streaming.length > 0) {
-      const episodes = streaming.map((ep, idx) => {
+      aniListEpisodes = streaming.map((ep, idx) => {
         let cleanTitle = ep.title || '';
-        // Extract title if in formats like "Episode 1 - Title" or "1. Title"
         const match = cleanTitle.match(/(?:Episode\s*\d+\s*[-:]\s*|\d+\.\s*)(.+)/i);
         if (match && match[1]) {
           cleanTitle = match[1].trim();
@@ -671,32 +741,72 @@ const getAnimeEpisodes = async (malId, page = 1) => {
           episode: idx + 1,
           title: cleanTitle || ep.title || `Episode ${idx + 1}`,
           fullTitle: ep.title,
-          thumbnail: ep.thumbnail || null
+          thumbnail: ep.thumbnail || null,
         };
       });
 
-      return {
-        data: episodes,
-        pagination: { last_visible_page: 1, has_next_page: false }
-      };
+      // If AniList covered all or nearly all episodes, cache and return
+      if (aniListEpisodes.length >= totalEps) {
+        const responseData = {
+          data: aniListEpisodes,
+          pagination: { last_visible_page: 1, has_next_page: false },
+        };
+        episodeCache.set(numericId, responseData);
+        return responseData;
+      }
     }
   } catch (err) {
     console.warn(`Failed to fetch streamingEpisodes for malId ${malId}:`, err.message);
   }
 
-  // Fallback if no streaming episodes available
-  const episodes = [];
-  for (let i = 1; i <= Math.min(totalEps, 100); i++) {
-    episodes.push({
+  // 2. If AniList only returned partial episodes (e.g. Naruto 26 / 220), query Kitsu for full list
+  const kitsuEpisodes = await fetchKitsuEpisodes(numericId, totalEps);
+  if (kitsuEpisodes && kitsuEpisodes.length > aniListEpisodes.length) {
+    const responseData = {
+      data: kitsuEpisodes,
+      pagination: { last_visible_page: 1, has_next_page: false },
+    };
+    episodeCache.set(numericId, responseData);
+    return responseData;
+  }
+
+  // 3. If AniList had some episodes, pad remainder up to totalEps
+  if (aniListEpisodes.length > 0) {
+    const existingCount = aniListEpisodes.length;
+    for (let i = existingCount + 1; i <= totalEps; i++) {
+      aniListEpisodes.push({
+        mal_id: i,
+        episode: i,
+        title: `Episode ${i}`,
+        fullTitle: `Episode ${i}`,
+        thumbnail: null,
+      });
+    }
+    const responseData = {
+      data: aniListEpisodes,
+      pagination: { last_visible_page: 1, has_next_page: false },
+    };
+    episodeCache.set(numericId, responseData);
+    return responseData;
+  }
+
+  // 4. Fallback if no providers have episode data
+  const fallbackList = [];
+  for (let i = 1; i <= Math.min(totalEps, 500); i++) {
+    fallbackList.push({
       mal_id: i,
+      episode: i,
       title: `Episode ${i}`,
-      episode: i
+      fullTitle: `Episode ${i}`,
+      thumbnail: null,
     });
   }
-  return {
-    data: episodes,
-    pagination: { last_visible_page: 1, has_next_page: false }
+
+  const responseData = {
+    data: fallbackList,
+    pagination: { last_visible_page: 1, has_next_page: false },
   };
+  return responseData;
 };
 
 const getAnimeRecommendations = async (malId) => {
