@@ -1,5 +1,6 @@
 const Anime = require('../models/Anime');
 const aniListApi = require('../utils/aniListApi');
+const { resolveGenreName } = require('../utils/genreMap');
 
 // @desc    Get all anime with filters and pagination
 // @route   GET /api/anime
@@ -21,7 +22,7 @@ const getAllAnime = async (req, res, next) => {
     const query = {};
     
     if (genre) {
-      const genres = genre.split(',');
+      const genres = genre.split(',').map(resolveGenreName).filter(Boolean);
       query.genres = { $in: genres.map(g => new RegExp(`^${g.trim()}$`, 'i')) };
     }
     
@@ -132,7 +133,7 @@ const searchAnime = async (req, res, next) => {
 
     const genreParam = genre || genres;
     if (genreParam) {
-      const genreList = genreParam.split(',').map(g => g.trim()).filter(Boolean);
+      const genreList = genreParam.split(',').map(resolveGenreName).filter(Boolean);
       if (genreList.length > 0) {
         query.genres = { $in: genreList.map(g => new RegExp(`^${g}$`, 'i')) };
       }

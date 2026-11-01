@@ -998,6 +998,75 @@ const getMangaRecommendations = async (malId) => {
   return [];
 };
 
+const getHentaiManga = async (page = 1, limit = 25) => {
+  const parsedPage = Math.max(parseInt(page) || 1, 1);
+  const parsedLimit = Math.min(Math.max(parseInt(limit) || 25, 1), 50);
+
+  const query = `
+    query ($page: Int, $perPage: Int) {
+      Page(page: $page, perPage: $perPage) {
+        pageInfo {
+          currentPage
+          hasNextPage
+          lastPage
+        }
+        media(genre: "Hentai", type: MANGA, sort: POPULARITY_DESC) {
+          id
+          idMal
+          title { romaji english native }
+          description(asHtml: false)
+          coverImage { large extraLarge }
+          chapters
+          volumes
+          status
+          format
+          startDate { year month day }
+          averageScore
+          popularity
+          genres
+          staff(perPage: 2) {
+            edges {
+              role
+              node { name { full } }
+            }
+          }
+        }
+      }
+    }
+  `;
+
+  try {
+    const data = await queryAniList(query, { page: parsedPage, perPage: parsedLimit });
+    const mediaList = data?.Page?.media || [];
+
+    const mangaList = await Promise.all(
+      mediaList.map(async (item) => {
+        const mangaData = transformMangaData(item);
+        if (!mangaData.genres.includes('Hentai')) {
+          mangaData.genres.push('Hentai');
+        }
+        return await Manga.findOneAndUpdate(
+          { malId: mangaData.malId },
+          mangaData,
+          { upsert: true, new: true }
+        );
+      })
+    );
+
+    return {
+      data: mangaList,
+      pagination: {
+        last_visible_page: data?.Page?.pageInfo?.lastPage || 1,
+        has_next_page: data?.Page?.pageInfo?.hasNextPage || false,
+        current_page: parsedPage
+      }
+    };
+  } catch (err) {
+    console.error('Error fetching hentai manga:', err.message);
+    return { data: [], pagination: { last_visible_page: 1, has_next_page: false, current_page: parsedPage } };
+  }
+};
+
 // ==========================================
 // CHARACTER API METHODS
 // ==========================================
@@ -1175,6 +1244,7 @@ module.exports = {
   getMangaPictures,
   getMangaCharacters,
   getMangaRecommendations,
+  getHentaiManga,
 
   // Character
   fetchCharacterById,

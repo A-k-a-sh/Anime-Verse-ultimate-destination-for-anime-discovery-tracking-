@@ -15,6 +15,7 @@ const MangaBrowse = () => {
   const [filters, setFilters] = useState({
     type: searchParams.get('type') || '',
     status: searchParams.get('status') || '',
+    adult: searchParams.get('adult') || '',
     order_by: searchParams.get('sort') || 'popularity',
     genre: searchParams.get('genre') || '',
   });
@@ -62,7 +63,7 @@ const MangaBrowse = () => {
   };
 
   const resetFilters = () => {
-    setFilters({ type: '', status: '', order_by: 'popularity', genre: '' });
+    setFilters({ type: '', status: '', adult: '', order_by: 'popularity', genre: '' });
     setPage(1);
     setManga([]);
     setSearchParams({});
@@ -141,6 +142,19 @@ const MangaBrowse = () => {
               </div>
 
               <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Age Rating / Scope</label>
+                <select
+                  value={filters.adult}
+                  onChange={(e) => handleFilterChange('adult', e.target.value)}
+                  className="w-full bg-dark-100 border border-gray-700 text-white rounded-lg px-3 py-2 focus:outline-none focus:border-primary"
+                >
+                  <option value="">All Safe Content</option>
+                  <option value="all">Include 18+ / Adult</option>
+                  <option value="only_adult">18+ / Adult & Hentai Only</option>
+                </select>
+              </div>
+
+              <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">Genre</label>
                 <div className="flex flex-wrap gap-2">
                   {[
@@ -148,7 +162,9 @@ const MangaBrowse = () => {
                     { id: 2, name: 'Adventure' },
                     { id: 4, name: 'Comedy' },
                     { id: 8, name: 'Drama' },
+                    { id: 9, name: 'Ecchi' },
                     { id: 10, name: 'Fantasy' },
+                    { id: 12, name: 'Hentai' },
                     { id: 22, name: 'Romance' },
                     { id: 24, name: 'Sci-Fi' },
                     { id: 25, name: 'Shoujo' },
@@ -156,9 +172,9 @@ const MangaBrowse = () => {
                   ].map((genre) => (
                     <button
                       key={genre.id}
-                      onClick={() => handleFilterChange('genre', filters.genre === String(genre.id) ? '' : String(genre.id))}
+                      onClick={() => handleFilterChange('genre', (filters.genre === genre.name || filters.genre === String(genre.id)) ? '' : genre.name)}
                       className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                        filters.genre === String(genre.id)
+                        (filters.genre === genre.name || filters.genre === String(genre.id))
                           ? 'bg-primary text-white'
                           : 'bg-dark-100 text-gray-300 hover:bg-dark-300'
                       }`}

@@ -216,9 +216,9 @@ const Browse = () => {
                   ].map((genre) => (
                     <button
                       key={genre.id}
-                      onClick={() => handleFilterChange('genre', filters.genre === String(genre.id) ? '' : String(genre.id))}
+                      onClick={() => handleFilterChange('genre', (filters.genre === genre.name || filters.genre === String(genre.id)) ? '' : genre.name)}
                       className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                        filters.genre === String(genre.id)
+                        (filters.genre === genre.name || filters.genre === String(genre.id))
                           ? 'bg-primary text-white'
                           : 'bg-dark-100 text-gray-300 hover:bg-dark-300'
                       }`}

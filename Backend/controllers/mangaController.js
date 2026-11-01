@@ -1,12 +1,13 @@
 const Manga = require('../models/Manga');
 const aniListApi = require('../utils/aniListApi');
+const { resolveGenreName } = require('../utils/genreMap');
 
 // @desc    Search manga (Database-First with AniList fallback)
 // @route   GET /api/manga/search or GET /api/manga
 // @access  Public
 const searchManga = async (req, res, next) => {
   try {
-    const { q, page = 1, limit = 25, type, status, order_by, sort, genre, genres } = req.query;
+    const { q, page = 1, limit = 25, type, status, order_by, sort, genre, genres, adult } = req.query;
 
     const parsedPage = Math.max(parseInt(page) || 1, 1);
     const parsedLimit = Math.min(Math.max(parseInt(limit) || 25, 1), 50);
@@ -41,13 +42,17 @@ const searchManga = async (req, res, next) => {
     }
 
     const genreParam = genre || genres;
+    const isAdultRequested = (adult && adult !== '') || (genreParam && (genreParam.toLowerCase().includes('hentai') || genreParam.trim() === '12'));
+
     if (genreParam) {
-      const genreList = genreParam.split(',').map(g => g.trim()).filter(Boolean);
+      const genreList = genreParam.split(',').map(resolveGenreName).filter(Boolean);
       if (genreList.length > 0) {
         query.genres = { $in: genreList.map(g => new RegExp(`^${g}$`, 'i')) };
       }
-    } else {
-      // Exclude adult/hentai content by default unless explicitly filtered
+    } else if (adult === 'only_adult') {
+      query.genres = { $in: [/^hentai$/i, /^ecchi$/i] };
+    } else if (!isAdultRequested) {
+      // Exclude adult/hentai content by default unless explicitly requested
       query.genres = { $nin: ['Hentai', 'hentai'] };
     }
 
@@ -85,6 +90,22 @@ const searchManga = async (req, res, next) => {
           total_items: total
         }
       });
+    }
+
+    // Fallback for hentai / adult manga when page results are empty
+    if (isAdultRequested) {
+      try {
+        const hentaiMangaResult = await aniListApi.getHentaiManga(parsedPage, parsedLimit);
+        if (hentaiMangaResult.data?.length > 0) {
+          return res.json({
+            success: true,
+            data: hentaiMangaResult.data,
+            pagination: hentaiMangaResult.pagination
+          });
+        }
+      } catch (err) {
+        console.error('Error fetching hentai manga from AniList:', err.message);
+      }
     }
 
     // 2. Fallback to AniList API on cache miss
