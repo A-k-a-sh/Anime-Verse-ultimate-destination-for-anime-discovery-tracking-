@@ -326,7 +326,7 @@ AnimeVerse is a comprehensive full-stack web application that allows users to di
 - **Toast** - Success/error notifications
 - **ProtectedRoute** - Route guard for authentication
 - **ErrorBoundary** - Error handling wrapper
-- **SearchBar** - Autocomplete search input
+- **SearchAutocomplete** - Live debounced search suggestions dropdown with poster art, score, format badges, and keyboard navigation
 - **FilterBar** - Content filtering controls
 
 ### State Management
