@@ -12,6 +12,7 @@ import PlayerControls from '../components/watch/PlayerControls';
 import EpisodeSelector from '../components/watch/EpisodeSelector';
 import CinemaOverlay from '../components/watch/CinemaOverlay';
 import RelatedAnimeList from '../components/watch/RelatedAnimeList';
+import AdultStreamNotice from '../components/watch/AdultStreamNotice';
 
 // Icons
 import {
@@ -491,6 +492,9 @@ const Watch = () => {
               onToggleFullscreen={handleToggleFullscreen}
             />
 
+            {/* Adult 18+ Streaming Helper (shown only for Rx / Hentai) */}
+            <AdultStreamNotice anime={anime} />
+
             {/* Below Player in Theater Mode: 2 Columns (Meta + Episodes) */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-4">
               <div className="lg:col-span-8 space-y-6">
@@ -658,6 +662,9 @@ const Watch = () => {
                 onToggleLights={handleToggleLights}
                 onToggleFullscreen={handleToggleFullscreen}
               />
+
+              {/* Adult 18+ Streaming Helper (shown only for Rx / Hentai) */}
+              <AdultStreamNotice anime={anime} />
 
               {/* Mobile Episode Selector (appears here only on small screens) */}
               <div className="block lg:hidden">
