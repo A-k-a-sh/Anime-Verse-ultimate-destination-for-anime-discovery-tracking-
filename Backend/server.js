@@ -20,9 +20,6 @@ const commentRoutes = require('./routes/commentRoutes');
 // Initialize express app
 const app = express();
 
-// Connect to database
-connectDB();
-
 // Security middleware
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
@@ -111,14 +108,53 @@ app.use((req, res, next) => {
   next();
 });
 
+// Database connection middleware for Serverless
+app.use(async (req, res, next) => {
+  // Allow health check / to run independently and report connection status
+  if (req.path === '/') {
+    return next();
+  }
+
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    console.error(`Database connection error on ${req.method} ${req.path}:`, error.message);
+    return res.status(503).json({
+      success: false,
+      message: 'Database connection failed. Please verify MONGO_URI in Vercel settings and MongoDB Atlas Network Access (0.0.0.0/0).',
+      error: error.message
+    });
+  }
+});
+
 // Health check route
-app.get('/', (req, res) => {
+app.get('/', async (req, res) => {
+  let dbStatus = 'Disconnected';
+  let dbHost = null;
+  let dbError = null;
+
+  try {
+    const conn = await connectDB();
+    dbStatus = 'Connected';
+    dbHost = conn?.connection?.host || null;
+  } catch (err) {
+    dbStatus = 'Connection Failed';
+    dbError = err.message;
+  }
+
   res.json({
     success: true,
     message: 'AnimeVerse API is running',
     version: '1.0.0',
     environment: process.env.NODE_ENV || 'development',
-    mongodb: mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected',
+    mongodb: dbStatus,
+    mongoHost: dbHost,
+    mongoUriConfigured: Boolean(process.env.MONGO_URI),
+    mongoUriType: process.env.MONGO_URI
+      ? (process.env.MONGO_URI.startsWith('mongodb+srv') ? 'MongoDB Atlas' : 'Local / Direct')
+      : 'Missing (Falling back to local default)',
+    dbError: dbError,
     endpoints: {
       health: '/',
       auth: '/api/auth',
@@ -158,24 +194,26 @@ app.use((req, res) => {
 // Error handling middleware (must be last)
 app.use(errorHandler);
 
-// Start server
-const PORT = process.env.PORT || 5000;
-const server = app.listen(PORT, () => {
-  console.log(`🚀 Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
-});
-
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (err) => {
-  console.error(`❌ Unhandled Rejection: ${err.message}`);
-  server.close(() => process.exit(1));
-});
-
-// Handle SIGTERM
-process.on('SIGTERM', () => {
-  console.log('👋 SIGTERM received, shutting down gracefully');
-  server.close(() => {
-    console.log('💤 Process terminated');
+// Start server (only in local development or standalone Node, not inside Vercel serverless bundling)
+if (!process.env.VERCEL) {
+  const PORT = process.env.PORT || 5000;
+  const server = app.listen(PORT, () => {
+    console.log(`🚀 Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
   });
-});
+
+  // Handle unhandled promise rejections
+  process.on('unhandledRejection', (err) => {
+    console.error(`❌ Unhandled Rejection: ${err.message}`);
+    server.close(() => process.exit(1));
+  });
+
+  // Handle SIGTERM
+  process.on('SIGTERM', () => {
+    console.log('👋 SIGTERM received, shutting down gracefully');
+    server.close(() => {
+      console.log('💤 Process terminated');
+    });
+  });
+}
 
 module.exports = app;
