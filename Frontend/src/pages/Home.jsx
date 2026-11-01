@@ -42,10 +42,18 @@ const isNotAdult = (item) => {
   return true;
 };
 
+const cleanSynopsis = (text, maxLength = 140) => {
+  if (!text) return 'No synopsis available.';
+  const stripped = text.replace(/<[^>]*>?/gm, '').trim();
+  if (stripped.length <= maxLength) return stripped;
+  return stripped.slice(0, maxLength).trim() + '...';
+};
+
 const Home = () => {
   // Core Data States
   const [spotlightAnime, setSpotlightAnime] = useState([]);
   const [currentSpotlight, setCurrentSpotlight] = useState(0);
+  const [isSpotlightPaused, setIsSpotlightPaused] = useState(false);
   const [trendingAnime, setTrendingAnime] = useState([]);
   const [latestAnime, setLatestAnime] = useState([]);
   const [topAnime, setTopAnime] = useState([]);
@@ -140,14 +148,14 @@ const Home = () => {
     fetchManga();
   }, []);
 
-  // Spotlight Auto-Rotation (every 6 seconds)
+  // Spotlight Auto-Rotation (every 6 seconds, pauses on hover)
   useEffect(() => {
-    if (spotlightAnime.length === 0) return;
+    if (spotlightAnime.length === 0 || isSpotlightPaused) return;
     const interval = setInterval(() => {
       setCurrentSpotlight((prev) => (prev + 1) % spotlightAnime.length);
     }, 6000);
     return () => clearInterval(interval);
-  }, [spotlightAnime.length]);
+  }, [spotlightAnime.length, isSpotlightPaused]);
 
   const currentAnime = spotlightAnime[currentSpotlight] || {};
   const currentBanner = currentAnime.bannerImage || currentAnime.imageUrl;
@@ -190,110 +198,129 @@ const Home = () => {
             {/* Main Spotlight Slider (Span 8) */}
             <div className="lg:col-span-8">
               {spotlightAnime.length > 0 && (
-                <div className="relative aspect-[16/9] sm:aspect-[21/9] lg:aspect-[16/9] rounded-2xl overflow-hidden group shadow-2xl border border-white/10">
-                  {/* Background Banner with Ken Burns Zoom */}
-                  <div
-                    key={currentAnime.malId}
-                    className="absolute inset-0 bg-cover bg-center transition-all duration-700 transform scale-100 group-hover:scale-105 filter brightness-90 group-hover:brightness-100"
-                    style={{ backgroundImage: `url(${currentBanner})` }}
-                  >
-                    {/* Gradients for text legibility */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-dark-100 via-dark-100/70 to-transparent" />
-                    <div className="absolute inset-0 bg-gradient-to-r from-dark-100/90 via-dark-100/40 to-transparent" />
-                  </div>
+                <div
+                  onMouseEnter={() => setIsSpotlightPaused(true)}
+                  onMouseLeave={() => setIsSpotlightPaused(false)}
+                  className="relative aspect-[16/9] sm:aspect-[21/9] lg:aspect-[16/9] rounded-2xl overflow-hidden group shadow-2xl border border-white/10"
+                >
+                  {/* Background Banner with Crossfade Transition */}
+                  <AnimatePresence initial={false}>
+                    <motion.div
+                      key={`banner-${currentAnime.malId || currentSpotlight}`}
+                      initial={{ opacity: 0, scale: 1.05 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.7, ease: [0.25, 0.1, 0.25, 1] }}
+                      className="absolute inset-0 bg-cover bg-center filter brightness-90 group-hover:brightness-100"
+                      style={{ backgroundImage: `url(${currentBanner})` }}
+                    >
+                      {/* Gradients for text legibility */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-dark-100 via-dark-100/70 to-transparent pointer-events-none" />
+                      <div className="absolute inset-0 bg-gradient-to-r from-dark-100/90 via-dark-100/40 to-transparent pointer-events-none" />
+                    </motion.div>
+                  </AnimatePresence>
 
-                  {/* Slide Content */}
-                  <div className="relative h-full flex flex-col justify-end p-5 sm:p-8 z-10">
-                    {/* Badges Row */}
-                    <div className="flex flex-wrap items-center gap-2 mb-3">
-                      <span className="bg-primary text-white text-xs font-black uppercase px-2.5 py-1 rounded-md shadow-md">
-                        #{currentSpotlight + 1} Spotlight
-                      </span>
-
-                      {currentAnime.score && (
-                        <span className="bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 text-xs font-bold px-2 py-0.5 rounded-md flex items-center gap-1 backdrop-blur-md">
-                          <StarIcon className="w-3.5 h-3.5 fill-yellow-400" />
-                          <span>{Number(currentAnime.score).toFixed(1)}</span>
+                  {/* Slide Content with Smooth Transition */}
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={`content-${currentAnime.malId || currentSpotlight}`}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -12 }}
+                      transition={{ duration: 0.35, ease: 'easeOut' }}
+                      className="relative h-full flex flex-col justify-end p-5 sm:p-8 z-10 pointer-events-auto"
+                    >
+                      {/* Badges Row */}
+                      <div className="flex flex-wrap items-center gap-2 mb-3">
+                        <span className="bg-primary text-white text-xs font-black uppercase px-2.5 py-1 rounded-md shadow-md">
+                          #{currentSpotlight + 1} Spotlight
                         </span>
-                      )}
 
-                      <span className="bg-white/10 text-gray-200 text-xs font-bold px-2 py-0.5 rounded-md backdrop-blur-md">
-                        SUB • DUB
-                      </span>
+                        {currentAnime.score && (
+                          <span className="bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 text-xs font-bold px-2 py-0.5 rounded-md flex items-center gap-1 backdrop-blur-md">
+                            <StarIcon className="w-3.5 h-3.5 fill-yellow-400" />
+                            <span>{Number(currentAnime.score).toFixed(1)}</span>
+                          </span>
+                        )}
 
-                      {currentAnime.type && (
-                        <span className="bg-white/10 text-gray-300 text-xs px-2 py-0.5 rounded-md backdrop-blur-md hidden sm:inline">
-                          {currentAnime.type}
+                        <span className="bg-white/10 text-gray-200 text-xs font-bold px-2 py-0.5 rounded-md backdrop-blur-md">
+                          SUB • DUB
                         </span>
-                      )}
-                    </div>
 
-                    {/* Anime Title */}
-                    <h2 className="text-2xl sm:text-4xl font-display font-black text-white mb-2 line-clamp-1 sm:line-clamp-2 drop-shadow-lg">
-                      {currentAnime.title || currentAnime.titleEnglish}
-                    </h2>
-
-                    {/* Metadata Strip */}
-                    <div className="flex flex-wrap items-center gap-3 mb-3 text-xs text-gray-300">
-                      {currentAnime.duration && (
-                        <span className="flex items-center gap-1">
-                          <ClockIcon className="w-3.5 h-3.5 text-primary" />
-                          <span>{currentAnime.duration}</span>
-                        </span>
-                      )}
-                      {currentAnime.year && (
-                        <span className="flex items-center gap-1">
-                          <CalendarIcon className="w-3.5 h-3.5 text-primary" />
-                          <span>{currentAnime.year}</span>
-                        </span>
-                      )}
-                      {currentAnime.episodes && (
-                        <span className="flex items-center gap-1">
-                          <TvIcon className="w-3.5 h-3.5 text-primary" />
-                          <span>{currentAnime.episodes} Episodes</span>
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Genres Pills */}
-                    {currentAnime.genres && currentAnime.genres.length > 0 && (
-                      <div className="hidden sm:flex flex-wrap gap-1.5 mb-4">
-                        {currentAnime.genres.slice(0, 4).map((g, idx) => {
-                          const name = typeof g === 'string' ? g : g?.name;
-                          return (
-                            <span
-                              key={idx}
-                              className="px-2 py-0.5 rounded bg-dark-100/80 border border-white/10 text-[11px] text-gray-300 font-medium"
-                            >
-                              {name}
-                            </span>
-                          );
-                        })}
+                        {currentAnime.type && (
+                          <span className="bg-white/10 text-gray-300 text-xs px-2 py-0.5 rounded-md backdrop-blur-md hidden sm:inline">
+                            {currentAnime.type}
+                          </span>
+                        )}
                       </div>
-                    )}
 
-                    {/* Synopsis */}
-                    <p className="text-gray-300 text-xs sm:text-sm mb-5 line-clamp-2 max-w-2xl leading-relaxed drop-shadow hidden sm:block">
-                      {currentAnime.synopsis}
-                    </p>
+                      {/* Anime Title */}
+                      <h2 className="text-2xl sm:text-4xl font-display font-black text-white mb-2 line-clamp-1 sm:line-clamp-2 max-w-xl drop-shadow-lg">
+                        {currentAnime.title || currentAnime.titleEnglish}
+                      </h2>
 
-                    {/* Actions */}
-                    <div className="flex items-center gap-3">
-                      <Link
-                        to={`/watch/${currentAnime.malId}/1`}
-                        className="inline-flex items-center gap-2 bg-gradient-to-r from-primary to-secondary hover:shadow-[0_0_25px_rgba(230,57,70,0.6)] text-white px-5 sm:px-7 py-2.5 sm:py-3 rounded-xl font-bold text-xs sm:text-sm transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg"
-                      >
-                        <PlayIcon className="w-4 h-4 fill-white" />
-                        <span>Watch Now</span>
-                      </Link>
-                      <Link
-                        to={`/anime/${currentAnime.malId}`}
-                        className="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl font-semibold text-xs sm:text-sm backdrop-blur-md border border-white/15 transition-all"
-                      >
-                        <span>Details</span>
-                      </Link>
-                    </div>
-                  </div>
+                      {/* Metadata Strip */}
+                      <div className="flex flex-wrap items-center gap-3 mb-2.5 text-xs text-gray-300">
+                        {currentAnime.duration && (
+                          <span className="flex items-center gap-1">
+                            <ClockIcon className="w-3.5 h-3.5 text-primary" />
+                            <span>{currentAnime.duration}</span>
+                          </span>
+                        )}
+                        {currentAnime.year && (
+                          <span className="flex items-center gap-1">
+                            <CalendarIcon className="w-3.5 h-3.5 text-primary" />
+                            <span>{currentAnime.year}</span>
+                          </span>
+                        )}
+                        {currentAnime.episodes && (
+                          <span className="flex items-center gap-1">
+                            <TvIcon className="w-3.5 h-3.5 text-primary" />
+                            <span>{currentAnime.episodes} Episodes</span>
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Genres Pills */}
+                      {currentAnime.genres && currentAnime.genres.length > 0 && (
+                        <div className="hidden sm:flex flex-wrap gap-1.5 mb-3">
+                          {currentAnime.genres.slice(0, 3).map((g, idx) => {
+                            const name = typeof g === 'string' ? g : g?.name;
+                            return (
+                              <span
+                                key={idx}
+                                className="px-2 py-0.5 rounded bg-dark-100/80 border border-white/10 text-[11px] text-gray-300 font-medium"
+                              >
+                                {name}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Synopsis (Clamped and Cleaned) */}
+                      <p className="text-gray-300 text-xs sm:text-sm mb-5 line-clamp-2 max-w-xl leading-relaxed drop-shadow hidden sm:block overflow-hidden">
+                        {cleanSynopsis(currentAnime.synopsis, 130)}
+                      </p>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-3">
+                        <Link
+                          to={`/watch/${currentAnime.malId}/1`}
+                          className="inline-flex items-center gap-2 bg-gradient-to-r from-primary to-secondary hover:shadow-[0_0_25px_rgba(230,57,70,0.6)] text-white px-5 sm:px-7 py-2.5 sm:py-3 rounded-xl font-bold text-xs sm:text-sm transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg"
+                        >
+                          <PlayIcon className="w-4 h-4 fill-white" />
+                          <span>Watch Now</span>
+                        </Link>
+                        <Link
+                          to={`/anime/${currentAnime.malId}`}
+                          className="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl font-semibold text-xs sm:text-sm backdrop-blur-md border border-white/15 transition-all"
+                        >
+                          <span>Details</span>
+                        </Link>
+                      </div>
+                    </motion.div>
+                  </AnimatePresence>
 
                   {/* Prev / Next Arrows */}
                   <button

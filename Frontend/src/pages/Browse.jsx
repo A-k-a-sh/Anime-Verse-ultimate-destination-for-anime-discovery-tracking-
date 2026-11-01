@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { animeService } from '../services/animeService';
 import AnimeGrid from '../components/AnimeGrid';
+import CollapsibleGenreFilter from '../components/CollapsibleGenreFilter';
 import { FunnelIcon } from '@heroicons/react/24/outline';
 
 const Browse = () => {
@@ -197,37 +198,11 @@ const Browse = () => {
                 </select>
               </div>
 
-              {/* Popular Genres */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Genre
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    { id: 1, name: 'Action' },
-                    { id: 2, name: 'Adventure' },
-                    { id: 4, name: 'Comedy' },
-                    { id: 8, name: 'Drama' },
-                    { id: 10, name: 'Fantasy' },
-                    { id: 22, name: 'Romance' },
-                    { id: 24, name: 'Sci-Fi' },
-                    { id: 27, name: 'Shounen' },
-                    { id: 37, name: 'Supernatural' },
-                  ].map((genre) => (
-                    <button
-                      key={genre.id}
-                      onClick={() => handleFilterChange('genre', (filters.genre === genre.name || filters.genre === String(genre.id)) ? '' : genre.name)}
-                      className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                        (filters.genre === genre.name || filters.genre === String(genre.id))
-                          ? 'bg-primary text-white'
-                          : 'bg-dark-100 text-gray-300 hover:bg-dark-300'
-                      }`}
-                    >
-                      {genre.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              {/* Collapsible Genre Filter */}
+              <CollapsibleGenreFilter
+                selectedGenre={filters.genre}
+                onSelectGenre={(val) => handleFilterChange('genre', val)}
+              />
             </div>
           </div>
 
