@@ -2,6 +2,7 @@ const axios = require('axios');
 const Anime = require('../models/Anime');
 const Manga = require('../models/Manga');
 const Character = require('../models/Character');
+const { resolveGenreName } = require('./genreMap');
 
 const ANILIST_URL = process.env.ANILIST_API_URL || 'https://graphql.anilist.co';
 const REQUEST_TIMEOUT = 8000;
@@ -259,13 +260,15 @@ const searchAnime = async (searchQuery, filters = {}) => {
   if (filters.order_by === 'start_date') sort = ['START_DATE_DESC'];
 
   const genreParam = filters.genre || filters.genres;
+  const rawGenre = genreParam ? genreParam.split(',')[0].trim() : undefined;
+  const resolvedGenre = rawGenre ? resolveGenreName(rawGenre) : undefined;
 
   const data = await queryAniList(query, {
     search: searchQuery && searchQuery.trim() ? searchQuery.trim() : undefined,
     page,
     perPage,
     sort,
-    genre: genreParam ? genreParam.split(',')[0].trim() : undefined
+    genre: resolvedGenre || undefined
   });
 
   const mediaList = data?.Page?.media || [];
@@ -830,16 +833,17 @@ const fetchMangaById = async (malId) => {
 const searchManga = async (searchQuery, filters = {}) => {
   const page = Math.max(parseInt(filters.page) || 1, 1);
   const perPage = Math.min(Math.max(parseInt(filters.limit) || 25, 1), 50);
+  const isAdult = filters.isAdult !== undefined ? Boolean(filters.isAdult) : false;
 
   const query = `
-    query ($search: String, $page: Int, $perPage: Int, $sort: [MediaSort], $genre: String) {
+    query ($search: String, $page: Int, $perPage: Int, $sort: [MediaSort], $genre: String, $isAdult: Boolean) {
       Page(page: $page, perPage: $perPage) {
         pageInfo {
           currentPage
           hasNextPage
           lastPage
         }
-        media(search: $search, type: MANGA, sort: $sort, genre: $genre, isAdult: false) {
+        media(search: $search, type: MANGA, sort: $sort, genre: $genre, isAdult: $isAdult) {
           id
           idMal
           title { romaji english native }
@@ -870,13 +874,16 @@ const searchManga = async (searchQuery, filters = {}) => {
   if (filters.order_by === 'start_date') sort = ['START_DATE_DESC'];
 
   const genreParam = filters.genre || filters.genres;
+  const rawGenre = genreParam ? genreParam.split(',')[0].trim() : undefined;
+  const resolvedGenre = rawGenre ? resolveGenreName(rawGenre) : undefined;
 
   const data = await queryAniList(query, {
     search: searchQuery && searchQuery.trim() ? searchQuery.trim() : undefined,
     page,
     perPage,
     sort,
-    genre: genreParam ? genreParam.split(',')[0].trim() : undefined
+    genre: resolvedGenre || undefined,
+    isAdult
   });
 
   const mediaList = data?.Page?.media || [];

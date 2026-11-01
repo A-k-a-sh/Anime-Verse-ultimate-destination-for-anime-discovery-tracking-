@@ -76,18 +76,48 @@ const getAllAnime = async (req, res, next) => {
       .skip(skip)
       .limit(parsedLimit);
 
+    if (anime.length > 0) {
+      const hasNextPage = (parsedPage * parsedLimit < total) || parsedPage < 100;
+      return res.json({
+        success: true,
+        data: anime,
+        pagination: {
+          currentPage: parsedPage,
+          totalPages: Math.ceil(total / parsedLimit) || 1,
+          totalResults: total,
+          hasNextPage,
+          hasPrevPage: parsedPage > 1,
+          last_visible_page: Math.ceil(total / parsedLimit) || 1,
+          current_page: parsedPage,
+          has_next_page: hasNextPage
+        }
+      });
+    }
+
+    // Fallback to AniList getTopAnime on page exhaustion
+    try {
+      const topResult = await aniListApi.getTopAnime(parsedPage, parsedLimit);
+      return res.json({
+        success: true,
+        data: topResult.data,
+        pagination: topResult.pagination
+      });
+    } catch (apiErr) {
+      console.error('AniList getTopAnime fallback error:', apiErr.message);
+    }
+
     res.json({
       success: true,
-      data: anime,
+      data: [],
       pagination: {
         currentPage: parsedPage,
         totalPages: Math.ceil(total / parsedLimit) || 1,
         totalResults: total,
-        hasNextPage: parsedPage * parsedLimit < total,
+        hasNextPage: false,
         hasPrevPage: parsedPage > 1,
-        last_visible_page: Math.ceil(total / parsedLimit) || 1,
+        last_visible_page: 1,
         current_page: parsedPage,
-        has_next_page: parsedPage * parsedLimit < total
+        has_next_page: false
       }
     });
   } catch (error) {
@@ -175,19 +205,24 @@ const searchAnime = async (req, res, next) => {
 
     // If results found in MongoDB, return immediately (<15ms)
     if (results.length > 0) {
+      const hasMoreInDb = (parsedPage * parsedLimit) < total;
+      // Option A: If we've reached the end of cached DB results, keep has_next_page true (up to page 100)
+      // so user can click "Load More" and dynamically expand cache from AniList
+      const hasNextPage = hasMoreInDb || parsedPage < 100;
+
       return res.json({
         success: true,
         data: results,
         pagination: {
           last_visible_page: Math.ceil(total / parsedLimit) || 1,
-          has_next_page: (parsedPage * parsedLimit) < total,
+          has_next_page: hasNextPage,
           current_page: parsedPage,
           total_items: total
         }
       });
     }
 
-    // Fallback for hentai / Rx when page results are empty
+    // Fallback for hentai / Rx when page results are empty in DB
     if (rating && (rating.toLowerCase() === 'rx' || rating.toLowerCase().includes('hentai'))) {
       try {
         const hentaiResult = await aniListApi.getHentaiAnime(parsedPage, parsedLimit);
@@ -203,33 +238,35 @@ const searchAnime = async (req, res, next) => {
       }
     }
 
-    // Crucial Fallback: ONLY if results.length === 0 AND a specific search query 'q' was provided,
-    // query Jikan API and asynchronously cache the results into MongoDB
-    if (q && q.trim()) {
-      const filters = {
-        page: parsedPage,
-        limit: parsedLimit,
-        type,
-        status,
-        rating,
-        genre: genre || genres,
-        order_by,
-        sort
-      };
+    // Option A Fallback: query AniList for browse or search when DB page results are exhausted
+    const filters = {
+      page: parsedPage,
+      limit: parsedLimit,
+      type,
+      status,
+      rating,
+      genre: genreParam ? genreParam.split(',').map(resolveGenreName).filter(Boolean).join(',') : '',
+      order_by,
+      sort
+    };
 
-      try {
-        const result = await aniListApi.searchAnime(q.trim(), filters);
-        return res.json({
-          success: true,
-          data: result.data,
-          pagination: result.pagination
-        });
-      } catch (apiError) {
-        console.error('AniList API fallback error for search query:', q, apiError.message);
-      }
+    try {
+      const result = await aniListApi.searchAnime(q ? q.trim() : '', filters);
+      return res.json({
+        success: true,
+        data: result.data || [],
+        pagination: result.pagination || {
+          last_visible_page: parsedPage,
+          has_next_page: false,
+          current_page: parsedPage,
+          total_items: 0
+        }
+      });
+    } catch (apiError) {
+      console.error('AniList API fallback error for browse/search:', apiError.message);
     }
 
-    // If query returned 0 items from DB and no Jikan fallback needed, return empty results
+    // If query returned 0 items from DB and AniList fallback failed/empty, return empty results
     return res.json({
       success: true,
       data: [],

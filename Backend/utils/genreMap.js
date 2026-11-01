@@ -66,3 +66,4 @@ module.exports = {
   MAL_GENRE_MAP,
   resolveGenreName
 };
+

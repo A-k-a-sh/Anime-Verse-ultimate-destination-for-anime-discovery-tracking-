@@ -80,12 +80,17 @@ const searchManga = async (req, res, next) => {
       .limit(parsedLimit);
 
     if (results.length > 0) {
+      const hasMoreInDb = (parsedPage * parsedLimit) < total;
+      // Option A: If we've reached the end of cached DB results, keep has_next_page true (up to page 100)
+      // so user can click "Load More" and dynamically expand cache from AniList
+      const hasNextPage = hasMoreInDb || parsedPage < 100;
+
       return res.json({
         success: true,
         data: results,
         pagination: {
           last_visible_page: Math.ceil(total / parsedLimit) || 1,
-          has_next_page: (parsedPage * parsedLimit) < total,
+          has_next_page: hasNextPage,
           current_page: parsedPage,
           total_items: total
         }
@@ -108,7 +113,7 @@ const searchManga = async (req, res, next) => {
       }
     }
 
-    // 2. Fallback to AniList API on cache miss
+    // 2. Option A Fallback to AniList API on cache miss or page exhaustion
     try {
       const filters = {
         page: parsedPage,
@@ -117,14 +122,20 @@ const searchManga = async (req, res, next) => {
         status,
         order_by,
         sort,
-        genre: genre || genres
+        genre: genreParam ? genreParam.split(',').map(resolveGenreName).filter(Boolean).join(',') : '',
+        isAdult: isAdultRequested
       };
 
       const result = await aniListApi.searchManga(q || '', filters);
       return res.json({
         success: true,
-        data: result.data,
-        pagination: result.pagination
+        data: result.data || [],
+        pagination: result.pagination || {
+          last_visible_page: parsedPage,
+          has_next_page: false,
+          current_page: parsedPage,
+          total_items: 0
+        }
       });
     } catch (apiError) {
       console.error('AniList Manga search fallback error:', apiError.message);
@@ -275,12 +286,15 @@ const getTopManga = async (req, res, next) => {
       .limit(parsedLimit);
 
     if (cached.length > 0 && !refresh) {
+      const hasMoreInDb = (parsedPage * parsedLimit) < total;
+      const hasNextPage = hasMoreInDb || parsedPage < 100;
+
       return res.json({
         success: true,
         data: cached,
         pagination: {
           last_visible_page: Math.ceil(total / parsedLimit) || 1,
-          has_next_page: (parsedPage * parsedLimit) < total,
+          has_next_page: hasNextPage,
           current_page: parsedPage,
           total_items: total
         },
