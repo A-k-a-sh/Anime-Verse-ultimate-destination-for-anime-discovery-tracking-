@@ -87,20 +87,28 @@ const SearchAutocomplete = ({ isMobile = false, onSelect }) => {
     [navigate, onSelect]
   );
 
+  const handleViewAllResults = useCallback(
+    (e) => {
+      e?.preventDefault();
+      e?.stopPropagation();
+      if (query.trim()) {
+        setIsOpen(false);
+        const targetQuery = query.trim();
+        setQuery('');
+        onSelect?.();
+        navigate(`/search?q=${encodeURIComponent(targetQuery)}`);
+      }
+    },
+    [query, navigate, onSelect]
+  );
+
   const handleSubmit = (e) => {
     e?.preventDefault();
     if (selectedIndex >= 0 && results[selectedIndex]) {
       handleNavigateToAnime(results[selectedIndex]);
       return;
     }
-
-    if (query.trim()) {
-      setIsOpen(false);
-      const targetQuery = query.trim();
-      setQuery('');
-      onSelect?.();
-      navigate(`/search?q=${encodeURIComponent(targetQuery)}`);
-    }
+    handleViewAllResults(e);
   };
 
   const handleKeyDown = (e) => {
@@ -186,7 +194,10 @@ const SearchAutocomplete = ({ isMobile = false, onSelect }) => {
           }`}
         >
           {results.length > 0 ? (
-            <div className="py-1 divide-y divide-white/5 overflow-y-auto max-h-[380px] scrollbar-thin scrollbar-thumb-white/10">
+            <div
+              onMouseLeave={() => setSelectedIndex(-1)}
+              className="py-1 divide-y divide-white/5 overflow-y-auto max-h-[380px] scrollbar-thin scrollbar-thumb-white/10"
+            >
               {results.map((anime, idx) => {
                 const targetId = anime.malId || anime.mal_id || anime.id;
                 const isSelected = idx === selectedIndex;
@@ -262,8 +273,9 @@ const SearchAutocomplete = ({ isMobile = false, onSelect }) => {
           {/* Footer Row: View all results */}
           {query.trim().length >= 2 && (
             <button
-              onClick={handleSubmit}
-              className="w-full flex items-center justify-between px-4 py-2.5 bg-dark-300/80 hover:bg-primary/20 text-xs font-semibold text-primary hover:text-white border-t border-white/5 transition-colors"
+              type="button"
+              onClick={handleViewAllResults}
+              className="w-full flex items-center justify-between px-4 py-2.5 bg-dark-300/80 hover:bg-primary/20 text-xs font-semibold text-primary hover:text-white border-t border-white/5 transition-colors cursor-pointer"
             >
               <span>View all results for &ldquo;{query.trim()}&rdquo;</span>
               <ArrowRightIcon className="w-3.5 h-3.5" />
