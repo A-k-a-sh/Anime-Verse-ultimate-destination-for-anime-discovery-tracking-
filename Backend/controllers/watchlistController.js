@@ -1,5 +1,5 @@
 const Watchlist = require('../models/Watchlist');
-const jikanApi = require('../utils/jikanApi');
+const aniListApi = require('../utils/aniListApi');
 
 // @desc    Get user's watchlist
 // @route   GET /api/watchlist
@@ -118,10 +118,9 @@ const addToWatchlist = async (req, res, next) => {
       };
       
       // Trigger background fetch to cache the data (don't wait for it)
-      const jikanApi = require('../utils/jikanApi');
       const fetchPromise = isManga 
-        ? jikanApi.fetchMangaById(malId)
-        : jikanApi.fetchAnimeById(malId);
+        ? aniListApi.fetchMangaById(malId)
+        : aniListApi.fetchAnimeById(malId);
       
       fetchPromise.then(async (data) => {
         console.log(`Background fetch complete for ${isManga ? 'manga' : 'anime'} ${malId}`);

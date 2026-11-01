@@ -1,4 +1,4 @@
-const jikanApi = require('../utils/jikanApi');
+const aniListApi = require('../utils/aniListApi');
 const Character = require('../models/Character');
 
 // @desc    Get character by ID
@@ -7,39 +7,63 @@ const Character = require('../models/Character');
 const getCharacterById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    
-    // Try API first with timeout protection
-    try {
-      const character = await jikanApi.fetchCharacterById(id);
+    const numericId = parseInt(id);
+
+    // 1. Database-first: check MongoDB cache first
+    let character = await Character.findOne({ malId: numericId });
+    let cached = true;
+
+    // 2. Fallback to AniList GraphQL API
+    if (!character) {
+      cached = false;
+      character = await aniListApi.fetchCharacterById(id);
       if (!character) {
         return res.status(404).json({
           success: false,
           message: 'Character not found'
         });
       }
-      return res.json({
-        success: true,
-        data: character
-      });
-    } catch (apiError) {
-      // Fallback to cache if API fails
-      console.error('Character API error, checking cache:', apiError.message);
-      const cached = await Character.findOne({ malId: parseInt(id) });
-      
-      if (cached) {
-        return res.json({
-          success: true,
-          data: cached,
-          cached: true
-        });
-      }
-      
-      // No cache either - return 404
-      return res.status(404).json({
-        success: false,
-        message: 'Character not found'
-      });
     }
+
+    const charObj = character.toObject ? character.toObject() : character;
+
+    // Ensure backwards compatibility with frontend CharacterDetails expectations
+    if (!charObj.voices && charObj.voiceActors) {
+      charObj.voices = charObj.voiceActors.map(va => ({
+        person: {
+          name: va.name,
+          images: { jpg: { image_url: va.imageUrl } }
+        },
+        language: va.language
+      }));
+    }
+    if (!charObj.anime && charObj.animeAppearances) {
+      charObj.anime = charObj.animeAppearances.map(a => ({
+        role: a.role,
+        anime: {
+          mal_id: a.malId,
+          title: a.title,
+          images: { jpg: { image_url: a.imageUrl || '' } }
+        }
+      }));
+    }
+    if (!charObj.name_kanji && charObj.nameKanji) {
+      charObj.name_kanji = charObj.nameKanji;
+    }
+    if (!charObj.images && charObj.imageUrl) {
+      charObj.images = {
+        jpg: {
+          image_url: charObj.imageUrl,
+          large_image_url: charObj.imageUrl
+        }
+      };
+    }
+
+    return res.json({
+      success: true,
+      data: charObj,
+      cached
+    });
   } catch (error) {
     if (error.response?.status === 404) {
       return res.status(404).json({
@@ -57,7 +81,7 @@ const getCharacterById = async (req, res, next) => {
 const getCharacterPictures = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const pictures = await jikanApi.getCharacterPictures(id);
+    const pictures = await aniListApi.getCharacterPictures(id);
 
     res.json({
       success: true,
