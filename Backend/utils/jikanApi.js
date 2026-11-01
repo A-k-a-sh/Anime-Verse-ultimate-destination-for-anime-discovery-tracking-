@@ -105,12 +105,13 @@ const transformAnimeData = (jikanAnime) => {
 };
 
 // Fetch and cache single anime by MAL ID
-const fetchAnimeById = async (malId) => {
-  // Check cache first
-  let anime = await Anime.findOne({ malId });
-  
-  if (anime && (Date.now() - anime.lastUpdated < CACHE_DURATIONS.ANIME)) {
-    return anime; // Return cached
+const fetchAnimeById = async (malId, forceRefresh = false) => {
+  // Check cache first if not force refresh
+  if (!forceRefresh) {
+    let anime = await Anime.findOne({ malId });
+    if (anime && (Date.now() - anime.lastUpdated < CACHE_DURATIONS.ANIME)) {
+      return anime; // Return cached
+    }
   }
   
   // Fetch from Jikan API
@@ -118,7 +119,7 @@ const fetchAnimeById = async (malId) => {
   const animeData = transformAnimeData(data.data);
   
   // Update or create in cache
-  anime = await Anime.findOneAndUpdate(
+  const anime = await Anime.findOneAndUpdate(
     { malId },
     animeData,
     { upsert: true, new: true }

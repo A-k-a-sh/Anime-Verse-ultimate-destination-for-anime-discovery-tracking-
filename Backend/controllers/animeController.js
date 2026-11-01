@@ -233,37 +233,56 @@ const searchAnime = async (req, res, next) => {
 const getAnimeById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    
-    // Try to fetch fresh data from Jikan API (with caching inside)
+    const malId = parseInt(id);
+
+    if (isNaN(malId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid anime ID'
+      });
+    }
+
+    // 1. Check MongoDB cache first (Instant return: < 10ms)
+    let anime = await Anime.findOne({ malId });
+    if (anime) {
+      // Return immediately - 0 waiting for Jikan
+      res.json({ success: true, data: anime, cached: true });
+
+      // 2. Background revalidation (Non-blocking Stale-While-Revalidate)
+      // Only revalidate if it's currently airing AND older than 24h
+      const isAiring = anime.status === 'Airing' || anime.status === 'Currently Airing';
+      const lastUpdatedTime = anime.lastUpdated ? new Date(anime.lastUpdated).getTime() : 0;
+      const isStale = (Date.now() - lastUpdatedTime) > 24 * 60 * 60 * 1000;
+
+      if (isAiring && isStale) {
+        jikanApi.fetchAnimeById(malId, true).catch(err => {
+          console.warn(`Background revalidation failed for ${malId}:`, err.message);
+        });
+      }
+      return;
+    }
+
+    // 3. Cache Miss (anime not in DB yet)
     try {
-      const anime = await jikanApi.fetchAnimeById(id);
-      if (!anime) {
+      const freshAnime = await jikanApi.fetchAnimeById(malId);
+      if (!freshAnime) {
         return res.status(404).json({
           success: false,
           message: 'Anime not found'
         });
       }
-      return res.json({
-        success: true,
-        data: anime
-      });
+      return res.json({ success: true, data: freshAnime });
     } catch (apiError) {
-      // If API fails, try cache as fallback
-      console.error('API error for anime details, checking cache:', apiError.message);
-      const cached = await Anime.findOne({ malId: parseInt(id) });
-      
-      if (cached) {
-        return res.json({
-          success: true,
-          data: cached,
-          cached: true,
-          message: 'Showing cached data due to API unavailability'
+      console.error(`Jikan API fetch error for anime ${malId}:`, apiError.message);
+      if (apiError.response?.status === 404) {
+        return res.status(404).json({
+          success: false,
+          message: 'Anime not found'
         });
       }
-      
-      return res.status(404).json({
+      return res.status(502).json({
         success: false,
-        message: 'Anime not found'
+        message: 'Unable to fetch anime details from external provider.'
       });
     }
   } catch (error) {
