@@ -79,24 +79,26 @@ const PlayerControls = ({
 
       {/* Feature Toggles */}
       <div className="flex flex-wrap items-center gap-2">
-        {/* Auto-Next */}
-        <button
-          onClick={onToggleAutoNext}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-            autoNext
-              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-              : 'bg-dark-100 text-gray-400 border border-white/5 hover:text-gray-200'
-          }`}
-          title="Automatically play next episode when current finishes"
-        >
-          <ForwardIcon className="w-3.5 h-3.5" />
-          <span>Auto-Next</span>
-          <span
-            className={`w-1.5 h-1.5 rounded-full ${
-              autoNext ? 'bg-emerald-400 animate-pulse' : 'bg-gray-600'
+        {/* Auto-Next (Series only) */}
+        {!isMovie && (
+          <button
+            onClick={onToggleAutoNext}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              autoNext
+                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                : 'bg-dark-100 text-gray-400 border border-white/5 hover:text-gray-200'
             }`}
-          />
-        </button>
+            title="Automatically play next episode when current finishes"
+          >
+            <ForwardIcon className="w-3.5 h-3.5" />
+            <span>Auto-Next</span>
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                autoNext ? 'bg-emerald-400 animate-pulse' : 'bg-gray-600'
+              }`}
+            />
+          </button>
+        )}
 
         {/* Auto-Skip Intro/Outro */}
         <button
@@ -106,7 +108,7 @@ const PlayerControls = ({
               ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
               : 'bg-dark-100 text-gray-400 border border-white/5 hover:text-gray-200'
           }`}
-          title="Auto-skip Intro and Outro (Server 1)"
+          title="Auto-skip Intro and Outro (Server 2)"
         >
           <span>Auto-Skip</span>
           <span

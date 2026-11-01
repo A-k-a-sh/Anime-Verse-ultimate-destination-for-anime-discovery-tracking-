@@ -8,7 +8,7 @@ import {
 
 /**
  * Multi-Server Video Player Iframe Component
- * Supports ZokoAnime (Server 1) and MegaPlay (Server 2) with postMessage events
+ * Supports MegaPlay (Server 1) and ZokoAnime (Server 2) with postMessage events
  * and container-level fullscreen management.
  */
 const VideoPlayer = ({
@@ -95,7 +95,7 @@ const VideoPlayer = ({
       }
       if (!msg) return;
 
-      // Handle Server 1 (ZokoAnime)
+      // Handle Server 2 (ZokoAnime)
       if (msg.channel === 'zokoanime') {
         switch (msg.type) {
           case 'ready':
@@ -126,14 +126,14 @@ const VideoPlayer = ({
           case 'error':
             console.warn('[ZokoAnime error]', msg);
             setHasError(true);
-            setErrorMessage(msg.message || 'Stream temporarily unavailable on Server 1');
+            setErrorMessage(msg.message || 'Stream temporarily unavailable on Server 2 (Zoko)');
             break;
           default:
             break;
         }
       }
 
-      // Handle Server 2 (MegaPlay)
+      // Handle Server 1 (MegaPlay)
       if (msg.channel === 'megacloud' || msg.channel === 'megaplay') {
         if (msg.type === 'watching-log' || msg.event === 'time') {
           onProgress?.(msg.currentTime || msg.time, msg.duration);
@@ -144,7 +144,7 @@ const VideoPlayer = ({
         if (msg.event === 'error' || msg.type === 'error') {
           console.warn('[MegaPlay error]', msg);
           setHasError(true);
-          setErrorMessage('Playback error reported on Server 2');
+          setErrorMessage('Playback error reported on Server 1 (MegaPlay)');
         }
       }
     };
@@ -192,7 +192,7 @@ const VideoPlayer = ({
           <div className="flex items-center gap-2">
             <ExclamationTriangleIcon className="w-5 h-5 text-red-400 shrink-0" />
             <span>
-              {errorMessage || `Streaming error on ${activeServer === 'server1' ? 'Server 1' : 'Server 2'}.`}
+              {errorMessage || `Streaming error on ${activeServer === 'server1' ? 'Server 1 (MegaPlay)' : 'Server 2 (Zoko)'}.`}
             </span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
