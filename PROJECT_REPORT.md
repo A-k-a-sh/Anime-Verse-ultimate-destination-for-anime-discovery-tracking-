@@ -291,23 +291,30 @@ AnimeVerse is a comprehensive full-stack web application that allows users to di
 2. **Browse Anime (`/browse`)** - Filterable grid with pagination
 3. **Browse Manga (`/manga`)** - Manga discovery page
 4. **Anime Details (`/anime/:id`)** - Comprehensive anime information
-5. **Manga Details (`/manga/:id`)** - Detailed manga view
-6. **Character Details (`/character/:id`)** - Character biography and appearances
-7. **Search Results (`/search`)** - Unified search for anime and manga
-8. **Random Discover (`/random`)** - Random anime/manga suggestions
-9. **Login (`/login`)** - User authentication
-10. **Register (`/register`)** - New user registration
+5. **Watch Page (`/watch/:id/:episode?`)** - Embedded streaming video player with dual servers, theater & cinema modes, interactive episode selector, and progress sync
+6. **Manga Details (`/manga/:id`)** - Detailed manga view
+7. **Character Details (`/character/:id`)** - Character biography and appearances
+8. **Search Results (`/search`)** - Unified search for anime and manga
+9. **Random Discover (`/random`)** - Random anime/manga suggestions
+10. **Login (`/login`)** - User authentication
+11. **Register (`/register`)** - New user registration
 
 #### Protected Pages (Authentication Required)
-11. **Dashboard (`/dashboard`)** - User overview with stats
-12. **Watchlist (`/watchlist`)** - Personal anime/manga tracking
-13. **Profile (`/profile`)** - User settings and preferences
+12. **Dashboard (`/dashboard`)** - User overview with stats
+13. **Watchlist (`/watchlist`)** - Personal anime/manga tracking
+14. **Profile (`/profile`)** - User settings and preferences
 
 ### Component Architecture
 
-#### Reusable Components (15+ Components)
+#### Reusable Components (20+ Components)
 - **Navbar** - Global navigation with search and auth state
 - **Footer** - Site information and links
+- **VideoPlayer** - Embedded video stream wrapper with unified postMessage router, container fullscreen sync, and failover banner
+- **ServerSwitcher** - Server 1 (MegaPlay) vs Server 2 (Zoko) selector with Sub/Dub/HSub audio tracks
+- **PlayerControls** - Prev/Next navigation, Auto-Next, Auto-Skip, Theater mode, Lights on/off, and Fullscreen toggles
+- **EpisodeSelector** - 50-episode tab pagination, Grid/List view toggle, real episode titles, search filter, and active/watched indicators
+- **CinemaOverlay** - High z-index backdrop overlay (`z-[60]`) dimming the viewport and fixed navbar for distraction-free viewing
+- **RelatedAnimeList** - Horizontal snap-scroll rail with chevron controls for recommendations
 - **AnimeCard** - Anime thumbnail with quick actions
 - **MangaCard** - Manga thumbnail display
 - **CharacterCard** - Character display with VA info
@@ -359,6 +366,8 @@ AnimeVerse is a comprehensive full-stack web application that allows users to di
   <Route path="/" element={<Home />} />
   <Route path="/browse" element={<Browse />} />
   <Route path="/anime/:id" element={<AnimeDetails />} />
+  <Route path="/watch/:id" element={<Watch />} />
+  <Route path="/watch/:id/:episode" element={<Watch />} />
   
   {/* Protected Routes */}
   <Route path="/dashboard" element={
@@ -553,6 +562,48 @@ Desktop: 4-5 columns
 - Ratings display
 - Review links
 
+### 8. Dual-Server Embedded Video Streaming & Dynamic Player (`/watch`)
+
+**Objective:** Provide a seamless, in-platform video streaming experience directly connected to user watch progress without external redirects.  
+**Solution:** Dual-server resilient iframe player with postMessage event synchronization, dynamic layout modes (Theater and Lights-Off Cinema), full episode title resolution, and persistent watch state tracking.
+
+#### Multi-Server Streaming Architecture
+- **Server 1: MegaPlay (`megaplay.buzz`) - Primary Default:**
+  - High reliability HLS CDN stream using numeric MAL IDs (`/stream/mal/:id/:ep/:lang`).
+  - Fast response, clean playback with `sub` and `dub` language tracks.
+- **Server 2: ZokoAnime (`zokoanime.video`) - Secondary / Feature-Rich Alternate:**
+  - Native parameters for theme customization (`color=8B5CF6`), Auto-Skip intro/outro (`asi=1`), and parent notifications (`autonext=1`).
+  - Supported audio/subtitle tracks: `sub`, `dub`, and `hsub`.
+- **Failover Alert Banner:** If either server emits an error or connection timeout, an automatic alert banner gives the user 1-click server switching and retry controls without losing place.
+
+#### Full Episode Title Resolution Engine
+- **AniList GraphQL `streamingEpisodes`:** Fetches official streaming episode titles from Crunchyroll/AniList metadata.
+- **Kitsu API Mapping Fallback:** For long-running anime (e.g. *Naruto* with 220 episodes, where AniList only returns season 1's 26 episodes), the backend dynamically maps the MAL ID via `https://kitsu.io/api/edge/mappings` and extracts complete episode titles across all seasons.
+- **In-Memory Caching:** Server-side TTL caching on episode lists eliminates redundant external calls.
+
+#### Viewing Layouts & Responsive Modes
+1. **Default Mode (2-Column Desktop):**
+   - 70% left column: Episode header, 16:9 player, server switchers, player controls, synopsis, and horizontal recommendations rail.
+   - 30% right column: Sticky episode selector card with range tabs and search filter.
+2. **Theater Mode (YouTube Style):**
+   - Player expands to maximum container width (`w-full max-h-[82vh] aspect-video mx-auto`) allowing full-width viewing while preventing top clipping beneath the fixed 64px navbar.
+   - Controls and episode selector dynamically reposition below the player.
+3. **Lights-Off Mode (Cinema Experience):**
+   - Fullscreen backdrop overlay with elevated `z-[60]` covers the viewport and completely dims the fixed navbar (`z-50`).
+   - The active video player shines unobscured at `z-[70]` with a vibrant purple glow shadow (`shadow-[0_0_80px_rgba(139,92,246,0.55)]`).
+
+#### Interactive Episode Selector
+- **50-Episode Range Tabs:** Fast pagination for massive anime (e.g., *One Piece* 1000+ eps) with auto-tab switching based on current episode.
+- **Grid vs List View Switcher:** Toggle between compact numbered grid tiles and detailed vertical list rows displaying full episode titles.
+- **Persistent Watched Styling:** Visual checkmark badge `✓` and dimmed pale styling (`bg-dark-300/40 text-gray-500`) for completed episodes.
+- **Movie Adaptation:** Automatically detects feature films (`anime.type === 'Movie'` or `episodes === 1`), hiding episode tabs and Prev/Next buttons in favor of a single `"Play Full Movie"` action.
+
+#### Cross-Site CTAs & Progress Synchronization
+- **85% Completion Detection:** Listens to iframe `watching-log` / `ended` events to automatically mark episodes as watched.
+- **Dual-Layer Persistence:** Local guest tracking in `watchStorage.js` (`localStorage`) and remote account synchronization via `watchlistService.updateProgress`.
+- **Contextual CTAs:** Dynamic "Watch Episode 1" / "Continue Watching Ep X" primary action buttons wired directly into `AnimeDetails.jsx`, `Hero.jsx`, and `Home.jsx`.
+- **Keyboard Shortcuts:** Quick hotkey navigation: `N` (Next), `P` (Prev), `S` (Switch Server), `T` (Theater), `L` (Lights), `F` (Fullscreen), and `Esc` (Exit Cinema).
+
 ---
 
 ## 🎨 UI/UX Design Principles
@@ -700,6 +751,25 @@ width: Math.min(
 - Lazy loading with Intersection Observer
 - Responsive images with srcset
 - Blur placeholder while loading
+
+### Challenge 7: Iframe Player Isolation & Multi-Server Synchronization
+**Problem:** Embedded iframe streaming servers halt playback if embedded with strict `sandbox` flags, and switching episode `src` inside an iframe causes the browser to forcefully exit fullscreen mode. Additionally, Server 1 (MegaPlay) and Server 2 (ZokoAnime) post messages on different channel names and formats.  
+**Solution:**
+- Strictly omitted `sandbox` attributes on the iframe while maintaining secure origin validation in the message receiver (`event.origin`).
+- Managed fullscreen locks at the parent container wrapper level (`containerRef.current.requestFullscreen()`), maintaining uninterrupted fullscreen viewing when episodes or servers change.
+- Built a unified `postMessage` event router handling both `zokoanime` channels (`watching-log`, `ended`, `fullscreen`) and `megacloud` channels (`complete`, `time`, `error`).
+
+### Challenge 8: Episode Title Completeness for Long-Running Anime
+**Problem:** AniList GraphQL `streamingEpisodes` typically only stores the first licensed season (e.g. 26 episodes for *Naruto*, leaving episodes 27–220 without titles). Relying on Jikan for episode titles caused frequent timeouts.  
+**Solution:**
+- Integrated the free, rate-limit resilient Kitsu API mapping endpoint (`kitsu.io/api/edge/mappings?filter[externalSite]=myanimelist/anime&filter[externalId]={malId}&include=item`).
+- Added automatic resolution in `aniListApi.js`: whenever AniList returns fewer episode titles than the anime's total episode count, the server transparently fetches all episode records from Kitsu, mapping them cleanly with 1-hour in-memory caching.
+
+### Challenge 9: Viewport Z-Index Layering in Cinema & Theater Modes
+**Problem:** The global fixed Navbar (`z-50`) remained visible over the backdrop during Lights-Off mode, distracting the user. In Theater mode, tall player containers clipped under the 64px fixed header on typical 1080p and laptop screens.  
+**Solution:**
+- Elevated the Lights-Off overlay to `z-[60]` with a `fixed inset-0 bg-black/95 backdrop-blur-md` barrier that dims both page body and fixed navigation elements, while the active player shines prominently at `z-[70]`.
+- Calibrated Theater mode sizing to `w-full max-h-[82vh] aspect-video mx-auto`, preserving 16:9 widescreen proportions while leaving clear breathing room beneath the 64px navbar.
 
 ---
 
@@ -869,7 +939,7 @@ VITE_API_URL=http://localhost:3000/api
 - [ ] Import from MyAnimeList
 
 ### Phase 3 - Content Expansion
-- [ ] Streaming integration (link to legal sources)
+- [x] Dual-Server Embedded Video Streaming Player (MegaPlay & ZokoAnime with custom player, theater mode, cinema mode, and episode selector)
 - [ ] Manga reader integration
 - [ ] News and articles section
 - [ ] Forum/community discussions

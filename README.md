@@ -7,9 +7,12 @@ Your ultimate destination for anime discovery, tracking, and community engagemen
 ## 🌟 Features
 
 - **Discover Anime & Manga**: Browse thousands of anime and manga titles with advanced filtering by genres, status, release years, formats, and adult ratings
+- **Embedded Dual-Server Video Player**: Stream anime episodes directly on site with dual-server redundancy (Server 1: MegaPlay, Server 2: ZokoAnime with custom purple theme and Auto-Skip), Sub/Dub/HSub tracks, and failover recovery
+- **Theater & Lights-Off (Cinema) Modes**: YouTube-style wide theater mode (82vh) and viewport-wide cinema dimming (`z-[60]`) with custom keyboard shortcuts (`N`, `P`, `S`, `T`, `L`, `F`, `Esc`)
+- **Interactive Episode Selector**: 50-episode range pagination, search filter, Grid vs List view toggling, and real episode title resolution (AniList & Kitsu mapping fallback)
 - **Database-First High Performance**: Instantaneous response times (< 15ms) powered by local MongoDB caching and automated write-through fallback to AniList
-- **Track Progress**: Maintain your personal watchlist with Watching, Completed, Plan-to-Watch, On-Hold, and Dropped statuses
-- **Personalized Recommendations**: Contextual anime and manga recommendations based on genre affinity and user preferences
+- **Unified Progress Tracking & Dynamic CTAs**: Synchronized episode tracking across `localStorage` and MongoDB Watchlist, with dynamic "Watch Episode 1" / "Continue Watching Ep X" CTAs on Anime Details, Hero, and Home
+- **Personalized Recommendations**: Contextual anime and manga recommendations with smooth horizontal snap-scroll rails
 - **Top & Seasonal Airing**: Explore all-time top-rated anime, current seasonal releases, and historical seasonal archives
 - **Character & Staff Database**: In-depth character profiles with Japanese voice actors and full production staff
 - **Auto-Expanding Pagination**: Seamless infinite browsing that dynamically fetches and caches new pages from AniList when database pages are exhausted
@@ -35,8 +38,11 @@ Your ultimate destination for anime discovery, tracking, and community engagemen
 - **Express Rate Limit** - API abuse protection
 - **Helmet** - Enterprise security headers
 
-### External API Provider
+### External API & Streaming Providers
 - **AniList GraphQL API v2** - High-speed, modern GraphQL catalog API for anime, manga, and characters
+- **Server 1: MegaPlay (`megaplay.buzz`)** - High-speed default video stream provider with Sub/Dub audio tracks
+- **Server 2: ZokoAnime (`zokoanime.video`)** - Multi-server video stream provider with Auto-Skip intro/outro, Sub/Dub/HSub tracks, and custom purple accent skin
+- **Kitsu API (`kitsu.io`)** - Secondary episode mapping provider ensuring complete episode lists and titles for long-running series
 
 ## 📦 Installation
 
@@ -136,6 +142,7 @@ npm run dev
 - `GET /api/anime/:id` - Full anime details (characters, voice actors, staff, recommendations)
 - `GET /api/anime/:id/characters` - Anime character roster with Japanese voice actors
 - `GET /api/anime/:id/recommendations` - Contextual recommendations (genre-matched fallback)
+- `GET /api/anime/:id/episodes` - Complete episode list with resolved titles (AniList + Kitsu fallback)
 
 ### Manga
 - `GET /api/manga` - Paginated manga catalog with database-first caching
