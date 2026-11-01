@@ -31,6 +31,7 @@ const Watch = () => {
   // Core Data States
   const [anime, setAnime] = useState(null);
   const [recommendations, setRecommendations] = useState([]);
+  const [episodeList, setEpisodeList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingRecs, setLoadingRecs] = useState(false);
   const [error, setError] = useState(null);
@@ -116,6 +117,24 @@ const Watch = () => {
     };
 
     fetchRecs();
+  }, [id]);
+
+  // Fetch Episode List with Titles
+  useEffect(() => {
+    if (!id) return;
+
+    const fetchEpisodes = async () => {
+      try {
+        const res = await animeService.getEpisodes(id);
+        if (res?.success && Array.isArray(res.data)) {
+          setEpisodeList(res.data);
+        }
+      } catch (err) {
+        console.warn('Could not load episode list:', err);
+      }
+    };
+
+    fetchEpisodes();
   }, [id]);
 
   // Sync Watchlist History for Authenticated Users
@@ -476,14 +495,18 @@ const Watch = () => {
                         🎞️ {totalEpisodes} episodes
                       </span>
                     )}
-                    {anime.genres?.map((g) => (
-                      <span
-                        key={g.mal_id || g.name}
-                        className="px-2.5 py-1 bg-primary/10 text-primary border border-primary/20 rounded"
-                      >
-                        {g.name}
-                      </span>
-                    ))}
+                    {anime.genres?.map((g, idx) => {
+                      const genreName = typeof g === 'string' ? g : g?.name || g?.title;
+                      if (!genreName) return null;
+                      return (
+                        <span
+                          key={g.mal_id || genreName || idx}
+                          className="px-2.5 py-1 bg-primary/10 text-primary border border-primary/20 rounded"
+                        >
+                          {genreName}
+                        </span>
+                      );
+                    })}
                   </div>
 
                   {/* Synopsis */}
@@ -518,11 +541,12 @@ const Watch = () => {
               </div>
 
               {/* Episode Selector (Right Column in Theater Mode) */}
-              <div className="lg:col-span-4">
+              <div className="lg:col-span-4 self-start">
                 <EpisodeSelector
                   totalEpisodes={totalEpisodes || currentEpisode}
                   currentEpisode={currentEpisode}
                   watchedEpisodes={watchedEpisodes}
+                  episodeList={episodeList}
                   onSelectEpisode={handleSelectEpisode}
                   isMovie={isMovie}
                 />
@@ -583,6 +607,7 @@ const Watch = () => {
                   totalEpisodes={totalEpisodes || currentEpisode}
                   currentEpisode={currentEpisode}
                   watchedEpisodes={watchedEpisodes}
+                  episodeList={episodeList}
                   onSelectEpisode={handleSelectEpisode}
                   isMovie={isMovie}
                 />
@@ -623,14 +648,18 @@ const Watch = () => {
                       🎞️ {totalEpisodes} episodes
                     </span>
                   )}
-                  {anime.genres?.map((g) => (
-                    <span
-                      key={g.mal_id || g.name}
-                      className="px-2.5 py-1 bg-primary/10 text-primary border border-primary/20 rounded"
-                    >
-                      {g.name}
-                    </span>
-                  ))}
+                  {anime.genres?.map((g, idx) => {
+                    const genreName = typeof g === 'string' ? g : g?.name || g?.title;
+                    if (!genreName) return null;
+                    return (
+                      <span
+                        key={g.mal_id || genreName || idx}
+                        className="px-2.5 py-1 bg-primary/10 text-primary border border-primary/20 rounded"
+                      >
+                        {genreName}
+                      </span>
+                    );
+                  })}
                 </div>
 
                 {/* Synopsis */}
@@ -665,12 +694,13 @@ const Watch = () => {
             </div>
 
             {/* Right Column: Sticky Episode Selector (~30%) */}
-            <div className="hidden lg:block lg:col-span-4 xl:col-span-4">
+            <div className="hidden lg:block lg:col-span-4 xl:col-span-4 self-start">
               <div className="sticky top-20">
                 <EpisodeSelector
                   totalEpisodes={totalEpisodes || currentEpisode}
                   currentEpisode={currentEpisode}
                   watchedEpisodes={watchedEpisodes}
+                  episodeList={episodeList}
                   onSelectEpisode={handleSelectEpisode}
                   isMovie={isMovie}
                 />

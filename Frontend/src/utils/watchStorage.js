@@ -11,6 +11,7 @@ const STORAGE_KEYS = {
   AUTO_NEXT: 'animeverse_auto_next',
   AUTO_SKIP: 'animeverse_auto_skip',
   THEATER_MODE: 'animeverse_theater_mode',
+  EP_VIEW_MODE: 'animeverse_ep_view_mode',
 };
 
 export const watchStorage = {
@@ -98,14 +99,15 @@ export const watchStorage = {
 
   /**
    * Get server preference ('server1' | 'server2')
+   * Default is 'server2' (MegaPlay)
    * @returns {'server1' | 'server2'}
    */
   getServerPreference: () => {
     try {
       const pref = localStorage.getItem(STORAGE_KEYS.SERVER_PREF);
-      return pref === 'server2' ? 'server2' : 'server1';
+      return pref === 'server1' ? 'server1' : 'server2';
     } catch {
-      return 'server1';
+      return 'server2';
     }
   },
 
@@ -217,6 +219,31 @@ export const watchStorage = {
       localStorage.setItem(STORAGE_KEYS.THEATER_MODE, String(!!value));
     } catch (err) {
       console.warn('Failed to set theater mode:', err);
+    }
+  },
+
+  /**
+   * Get episode selector view mode ('grid' | 'list')
+   * @returns {'grid' | 'list'}
+   */
+  getEpisodeViewMode: () => {
+    try {
+      const mode = localStorage.getItem(STORAGE_KEYS.EP_VIEW_MODE);
+      return mode === 'list' ? 'list' : 'grid';
+    } catch {
+      return 'grid';
+    }
+  },
+
+  /**
+   * Set episode selector view mode ('grid' | 'list')
+   * @param {'grid' | 'list'} mode
+   */
+  setEpisodeViewMode: (mode) => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.EP_VIEW_MODE, mode === 'list' ? 'list' : 'grid');
+    } catch (err) {
+      console.warn('Failed to set episode view mode:', err);
     }
   },
 };

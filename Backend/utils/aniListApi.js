@@ -638,8 +638,53 @@ const getAnimePictures = async (malId) => {
 };
 
 const getAnimeEpisodes = async (malId, page = 1) => {
-  const anime = await Anime.findOne({ malId: parseInt(malId) });
+  const numericId = parseInt(malId);
+  const anime = await Anime.findOne({ malId: numericId });
   const totalEps = anime?.episodes || 12;
+
+  try {
+    const query = `
+      query ($idMal: Int) {
+        Media(idMal: $idMal, type: ANIME) {
+          streamingEpisodes {
+            title
+            thumbnail
+            url
+          }
+        }
+      }
+    `;
+    const result = await queryAniList(query, { idMal: numericId });
+    const streaming = result?.Media?.streamingEpisodes || [];
+
+    if (streaming.length > 0) {
+      const episodes = streaming.map((ep, idx) => {
+        let cleanTitle = ep.title || '';
+        // Extract title if in formats like "Episode 1 - Title" or "1. Title"
+        const match = cleanTitle.match(/(?:Episode\s*\d+\s*[-:]\s*|\d+\.\s*)(.+)/i);
+        if (match && match[1]) {
+          cleanTitle = match[1].trim();
+        }
+
+        return {
+          mal_id: idx + 1,
+          episode: idx + 1,
+          title: cleanTitle || ep.title || `Episode ${idx + 1}`,
+          fullTitle: ep.title,
+          thumbnail: ep.thumbnail || null
+        };
+      });
+
+      return {
+        data: episodes,
+        pagination: { last_visible_page: 1, has_next_page: false }
+      };
+    }
+  } catch (err) {
+    console.warn(`Failed to fetch streamingEpisodes for malId ${malId}:`, err.message);
+  }
+
+  // Fallback if no streaming episodes available
   const episodes = [];
   for (let i = 1; i <= Math.min(totalEps, 100); i++) {
     episodes.push({

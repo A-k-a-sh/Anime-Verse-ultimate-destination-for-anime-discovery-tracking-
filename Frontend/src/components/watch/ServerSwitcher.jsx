@@ -17,29 +17,30 @@ const ServerSwitcher = ({
           Server:
         </span>
         <button
-          onClick={() => onServerChange('server1')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
-            activeServer === 'server1'
-              ? 'bg-primary text-white shadow-md shadow-primary/25 scale-[1.02]'
-              : 'bg-dark-100 text-gray-300 hover:text-white hover:bg-dark-300 border border-white/5'
-          }`}
-          title="Server 1: ZokoAnime (Default with Auto-Skip)"
-        >
-          <BoltIcon className="w-3.5 h-3.5 text-yellow-300" />
-          <span>Server 1 (Zoko)</span>
-        </button>
-
-        <button
           onClick={() => onServerChange('server2')}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
             activeServer === 'server2'
               ? 'bg-secondary text-dark-100 shadow-md shadow-secondary/25 font-bold scale-[1.02]'
               : 'bg-dark-100 text-gray-300 hover:text-white hover:bg-dark-300 border border-white/5'
           }`}
-          title="Server 2: MegaPlay (Backup High-Speed CDN)"
+          title="Server 2: MegaPlay (Default High-Speed Stream)"
         >
           <RocketLaunchIcon className="w-3.5 h-3.5 text-secondary" />
           <span>Server 2 (MegaPlay)</span>
+          <span className="text-[10px] bg-dark-100/30 px-1 rounded text-dark-100 font-extrabold uppercase">Default</span>
+        </button>
+
+        <button
+          onClick={() => onServerChange('server1')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
+            activeServer === 'server1'
+              ? 'bg-primary text-white shadow-md shadow-primary/25 scale-[1.02]'
+              : 'bg-dark-100 text-gray-300 hover:text-white hover:bg-dark-300 border border-white/5'
+          }`}
+          title="Server 1: ZokoAnime (Alternate with Auto-Skip)"
+        >
+          <BoltIcon className="w-3.5 h-3.5 text-yellow-300" />
+          <span>Server 1 (Zoko)</span>
         </button>
       </div>
 
