@@ -99,15 +99,15 @@ export const watchStorage = {
 
   /**
    * Get server preference ('server1' | 'server2')
-   * Default is 'server2' (MegaPlay)
+   * Default is 'server1' (MegaPlay)
    * @returns {'server1' | 'server2'}
    */
   getServerPreference: () => {
     try {
       const pref = localStorage.getItem(STORAGE_KEYS.SERVER_PREF);
-      return pref === 'server1' ? 'server1' : 'server2';
+      return pref === 'server2' ? 'server2' : 'server1';
     } catch {
-      return 'server2';
+      return 'server1';
     }
   },
 

@@ -20,26 +20,26 @@ const ServerSwitcher = ({
           onClick={() => onServerChange('server1')}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
             activeServer === 'server1'
-              ? 'bg-primary text-white shadow-md shadow-primary/25 scale-[1.02]'
+              ? 'bg-secondary text-dark-100 shadow-md shadow-secondary/25 font-bold scale-[1.02]'
               : 'bg-dark-100 text-gray-300 hover:text-white hover:bg-dark-300 border border-white/5'
           }`}
-          title="Server 1: ZokoAnime"
+          title="Server 1: MegaPlay"
         >
-          <BoltIcon className="w-3.5 h-3.5 text-yellow-300" />
-          <span>Server 1 (Zoko)</span>
+          <RocketLaunchIcon className="w-3.5 h-3.5 text-secondary" />
+          <span>Server 1 (MegaPlay)</span>
         </button>
 
         <button
           onClick={() => onServerChange('server2')}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
             activeServer === 'server2'
-              ? 'bg-secondary text-dark-100 shadow-md shadow-secondary/25 font-bold scale-[1.02]'
+              ? 'bg-primary text-white shadow-md shadow-primary/25 scale-[1.02]'
               : 'bg-dark-100 text-gray-300 hover:text-white hover:bg-dark-300 border border-white/5'
           }`}
-          title="Server 2: MegaPlay"
+          title="Server 2: Zoko"
         >
-          <RocketLaunchIcon className="w-3.5 h-3.5 text-secondary" />
-          <span>Server 2 (MegaPlay)</span>
+          <BoltIcon className="w-3.5 h-3.5 text-yellow-300" />
+          <span>Server 2 (Zoko)</span>
         </button>
       </div>
 
@@ -66,7 +66,7 @@ const ServerSwitcher = ({
         >
           DUB
         </button>
-        {activeServer === 'server1' && (
+        {activeServer === 'server2' && (
           <button
             onClick={() => onTrackChange('hsub')}
             className={`px-2.5 py-1 rounded text-xs font-semibold transition-all ${
@@ -74,7 +74,7 @@ const ServerSwitcher = ({
                 ? 'bg-white/20 text-white'
                 : 'text-gray-400 hover:text-gray-200'
             }`}
-            title="Hard Subtitled"
+            title="Hard Subtitled (Zoko)"
           >
             HSUB
           </button>

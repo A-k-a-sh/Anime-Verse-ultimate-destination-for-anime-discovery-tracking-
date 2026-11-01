@@ -459,6 +459,7 @@ const Watch = () => {
               onProgress={handleProgress}
               onServerSwitch={handleServerChange}
               isLightsOff={isLightsOff}
+              isTheater={isTheater}
             />
 
             {/* Server Switcher Bar */}
@@ -626,6 +627,7 @@ const Watch = () => {
                 onProgress={handleProgress}
                 onServerSwitch={handleServerChange}
                 isLightsOff={isLightsOff}
+                isTheater={isTheater}
               />
 
               {/* Server Switcher Bar */}

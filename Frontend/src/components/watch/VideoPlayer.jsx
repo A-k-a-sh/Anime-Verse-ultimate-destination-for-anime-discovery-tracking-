@@ -22,6 +22,7 @@ const VideoPlayer = ({
   onProgress,
   onServerSwitch,
   isLightsOff = false,
+  isTheater = false,
   containerRef,
 }) => {
   const iframeRef = useRef(null);
@@ -36,16 +37,15 @@ const VideoPlayer = ({
     const id = parseInt(malId, 10);
 
     if (activeServer === 'server1') {
-      // Server 1: ZokoAnime (zokoanime.video)
-      // Supports color hex, autoplay, asi (auto-skip intro/outro), autonext
-      const asiParam = autoSkip ? 1 : 0;
-      const autoNextParam = autoNext ? 1 : 0;
-      return `https://zokoanime.video/stream/mal/${id}/${ep}/${track}?color=8B5CF6&autoplay=1&asi=${asiParam}&autonext=${autoNextParam}`;
-    } else {
-      // Server 2: MegaPlay (megaplay.buzz)
+      // Server 1: MegaPlay (megaplay.buzz) - Primary / Default
       // Language must be 'sub' or 'dub' (fallback hsub to sub)
       const lang = track === 'dub' ? 'dub' : 'sub';
       return `https://megaplay.buzz/stream/mal/${id}/${ep}/${lang}`;
+    } else {
+      // Server 2: ZokoAnime (zokoanime.video) - Alternate with Auto-Skip & Custom Accent
+      const asiParam = autoSkip ? 1 : 0;
+      const autoNextParam = autoNext ? 1 : 0;
+      return `https://zokoanime.video/stream/mal/${id}/${ep}/${track}?color=8B5CF6&autoplay=1&asi=${asiParam}&autonext=${autoNextParam}`;
     }
   };
 
@@ -65,7 +65,7 @@ const VideoPlayer = ({
       setIsFullscreen(active);
 
       // Report fullscreen state to ZokoAnime if active
-      if (activeServer === 'server1' && iframeRef.current?.contentWindow) {
+      if (activeServer === 'server2' && iframeRef.current?.contentWindow) {
         iframeRef.current.contentWindow.postMessage(
           { channel: 'zokoanime', type: 'fullscreen', active },
           'https://zokoanime.video'
@@ -171,17 +171,19 @@ const VideoPlayer = ({
 
   const alternateServer = activeServer === 'server1' ? 'server2' : 'server1';
   const alternateServerLabel =
-    activeServer === 'server1' ? 'Server 2 (MegaPlay)' : 'Server 1 (Zoko)';
+    activeServer === 'server1' ? 'Server 2 (Zoko)' : 'Server 1 (MegaPlay)';
+
+  const lightsClass = isLightsOff
+    ? isTheater
+      ? 'relative z-50 shadow-[0_0_80px_rgba(139,92,246,0.55)] ring-1 ring-white/20'
+      : 'fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[94vw] max-w-5xl shadow-[0_0_80px_rgba(139,92,246,0.55)] ring-1 ring-white/20'
+    : 'relative';
 
   return (
     <div className="relative w-full aspect-video">
       <div
         ref={containerRef}
-        className={`w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl transition-all duration-300 ${
-          isLightsOff
-            ? 'fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[94vw] max-w-5xl shadow-[0_0_80px_rgba(139,92,246,0.55)] ring-1 ring-white/20'
-            : 'relative'
-        }`}
+        className={`w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl transition-all duration-300 ${lightsClass}`}
       >
         {/* Failover Alert Banner */}
       {hasError && (
