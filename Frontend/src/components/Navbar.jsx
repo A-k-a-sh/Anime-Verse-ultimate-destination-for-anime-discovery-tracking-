@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
-  MagnifyingGlassIcon, 
   Bars3Icon, 
   XMarkIcon,
   UserCircleIcon,
@@ -12,6 +11,7 @@ import {
   Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
+import SearchAutocomplete from './SearchAutocomplete';
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -19,7 +19,6 @@ const Navbar = () => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isAnimeMenuOpen, setIsAnimeMenuOpen] = useState(false);
   const [isMangaMenuOpen, setIsMangaMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
@@ -40,14 +39,6 @@ const Navbar = () => {
     setIsMobileMenuOpen(false);
     setIsUserMenuOpen(false);
   }, [location.pathname]);
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-      setSearchQuery('');
-    }
-  };
 
   const handleLogout = () => {
     logout();
@@ -169,22 +160,10 @@ const Navbar = () => {
             })}
           </div>
 
-          {/* Search Bar */}
-          <form
-            onSubmit={handleSearch}
-            className="hidden md:flex items-center flex-1 max-w-md mx-4"
-          >
-            <div className="relative w-full">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search anime..."
-                className="w-full bg-dark-300/50 border border-dark-400 rounded-full px-4 py-2 pl-10 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200"
-              />
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-            </div>
-          </form>
+          {/* Search Bar with Live Autocomplete */}
+          <div className="hidden md:flex items-center flex-1 max-w-md mx-4">
+            <SearchAutocomplete />
+          </div>
 
           {/* User Menu / Auth Buttons */}
           <div className="flex items-center space-x-4">
@@ -278,17 +257,10 @@ const Navbar = () => {
             className="md:hidden bg-dark-300 border-t border-dark-400"
           >
             <div className="px-4 py-4 space-y-3">
-              {/* Mobile Search */}
-              <form onSubmit={handleSearch} className="relative">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search anime..."
-                  className="w-full bg-dark-200 border border-dark-400 rounded-full px-4 py-2 pl-10 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-              </form>
+              {/* Mobile Search with Live Autocomplete */}
+              <div className="relative">
+                <SearchAutocomplete isMobile onSelect={() => setIsMobileMenuOpen(false)} />
+              </div>
 
               {/* Mobile Nav Links */}
               {navLinks.map((link) => {
