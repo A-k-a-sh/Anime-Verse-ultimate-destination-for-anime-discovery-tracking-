@@ -210,9 +210,7 @@ const Landing = () => {
     const timer = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) {
-          setActiveSceneIndex((idx) => (idx + 1) % SCENES.length);
-          setVideoLoaded(false);
-          return 0;
+          return 100;
         }
         return prev + step;
       });
@@ -220,6 +218,15 @@ const Landing = () => {
 
     return () => clearInterval(timer);
   }, [isPlaying, activeSceneIndex]);
+
+  // When progress reaches 100%, advance to the next scene sequentially
+  useEffect(() => {
+    if (progress >= 100) {
+      setActiveSceneIndex((prev) => (prev + 1) % SCENES.length);
+      setProgress(0);
+      setVideoLoaded(false);
+    }
+  }, [progress]);
 
   // Reset video loaded flag on scene change
   useEffect(() => {
