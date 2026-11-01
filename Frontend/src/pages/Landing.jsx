@@ -16,7 +16,12 @@ import {
   PlusIcon,
   MinusIcon,
   StarIcon,
-} from '@heroicons/react/24/outline';
+  BoltIcon,
+  FireIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  ComputerDesktopIcon,
+} from '@heroicons/react/24/solid';
 
 const SCENES = [
   {
@@ -31,8 +36,9 @@ const SCENES = [
     watchUrl: '/watch/151807/1',
     detailsUrl: '/anime/151807',
     badge: 'Trending Worldwide',
-    accentColor: 'from-purple-500 to-indigo-500',
-    glowColor: 'rgba(168, 85, 247, 0.25)',
+    accentColor: 'from-purple-400 via-fuchsia-500 to-indigo-400',
+    glowColor: 'rgba(168, 85, 247, 0.45)',
+    tag: '#1 Most Anticipated',
   },
   {
     id: 'jujutsu-kaisen',
@@ -46,8 +52,9 @@ const SCENES = [
     watchUrl: '/watch/40748/1',
     detailsUrl: '/anime/40748',
     badge: 'Peak Supernatural Action',
-    accentColor: 'from-blue-500 to-cyan-400',
-    glowColor: 'rgba(59, 130, 246, 0.25)',
+    accentColor: 'from-blue-400 via-cyan-400 to-indigo-400',
+    glowColor: 'rgba(59, 130, 246, 0.45)',
+    tag: 'Shibuya Climax',
   },
   {
     id: 'demon-slayer',
@@ -61,8 +68,9 @@ const SCENES = [
     watchUrl: '/watch/38000/1',
     detailsUrl: '/anime/38000',
     badge: 'Award-Winning Animation',
-    accentColor: 'from-amber-500 to-red-500',
-    glowColor: 'rgba(245, 158, 11, 0.25)',
+    accentColor: 'from-amber-400 via-orange-500 to-red-500',
+    glowColor: 'rgba(245, 158, 11, 0.45)',
+    tag: 'Infinity Castle Arc',
   },
   {
     id: 'bleach',
@@ -76,8 +84,42 @@ const SCENES = [
     watchUrl: '/watch/41467/1',
     detailsUrl: '/anime/41467',
     badge: 'Legendary Shonen Return',
-    accentColor: 'from-red-600 to-orange-500',
-    glowColor: 'rgba(239, 68, 68, 0.25)',
+    accentColor: 'from-red-500 via-rose-500 to-orange-400',
+    glowColor: 'rgba(239, 68, 68, 0.45)',
+    tag: 'Final Arc',
+  },
+];
+
+const COMPARISON_ITEMS = [
+  {
+    feature: 'Intrusive Popups & Redirects',
+    sketchy: '4–5 spam tabs per click',
+    animeverse: '100% Zero spam redirects or popups',
+    status: true,
+  },
+  {
+    feature: 'Streaming Server Redundancy',
+    sketchy: 'Single server that buffers or dies',
+    animeverse: 'Dual High-Speed CDN (MegaPlay + Zoko)',
+    status: true,
+  },
+  {
+    feature: 'Manga Reading Integration',
+    sketchy: 'Separate ad-ridden manga site required',
+    animeverse: 'Integrated MangaDex continuous Webtoon reader',
+    status: true,
+  },
+  {
+    feature: 'Watch Progress & Resume',
+    sketchy: 'Lost on refresh or device change',
+    animeverse: 'Auto-saves at 85% progress & cloud sync',
+    status: true,
+  },
+  {
+    feature: 'Player Controls & Cinema',
+    sketchy: 'Generic player with no shortcuts',
+    animeverse: 'Theater Mode, Lights Off & keyboard shortcuts',
+    status: true,
   },
 ];
 
@@ -114,10 +156,14 @@ const Landing = () => {
   const [loadingTrending, setLoadingTrending] = useState(true);
   const [expandedFaq, setExpandedFaq] = useState(null);
 
+  // Interactive mock server state for the Bento player card
+  const [mockServer, setMockServer] = useState('server1');
+  const [mockProgressPercent, setMockProgressPercent] = useState(85);
+
   const activeScene = SCENES[activeSceneIndex];
   const videoRef = useRef(null);
 
-  // Auto-advance scenes every 8 seconds (8000ms) with a 50ms progress interval
+  // Auto-advance scenes every 8 seconds
   useEffect(() => {
     if (!isPlaying) return;
 
@@ -182,9 +228,9 @@ const Landing = () => {
   };
 
   return (
-    <div className="min-h-screen bg-dark-100 text-white overflow-x-hidden">
+    <div className="min-h-screen bg-dark-100 text-white overflow-x-hidden selection:bg-primary selection:text-white">
       {/* =========================================================================
-          HERO SECTION: MULTI-SCENE CINEMATIC SHOWCASE
+          HERO SECTION: MULTI-SCENE CINEMATIC SHOWCASE (HIGH VISIBILITY VIDEO)
       ========================================================================= */}
       <section className="relative min-h-[92vh] sm:min-h-[95vh] flex flex-col justify-between overflow-hidden">
         {/* Background Visuals Layer */}
@@ -194,10 +240,10 @@ const Landing = () => {
             key={`poster-${activeScene.id}`}
             src={activeScene.poster}
             alt={activeScene.title}
-            className="absolute inset-0 w-full h-full object-cover object-center filter brightness-90 transition-opacity duration-700"
+            className="absolute inset-0 w-full h-full object-cover object-center filter brightness-100 contrast-105 transition-opacity duration-700"
           />
 
-          {/* Looped Sakuga Video Loop */}
+          {/* Looped Sakuga Video Loop (High Visibility, Brightness boosted) */}
           <video
             key={`video-${activeScene.id}`}
             ref={videoRef}
@@ -207,22 +253,22 @@ const Landing = () => {
             muted
             playsInline
             onCanPlay={() => setVideoLoaded(true)}
-            className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-1000 ${
+            className={`absolute inset-0 w-full h-full object-cover object-center filter brightness-105 contrast-105 transition-opacity duration-1000 ${
               videoLoaded ? 'opacity-100' : 'opacity-0'
             }`}
           />
 
-          {/* Cinematic Gradient Masks */}
-          {/* Dark vignette left to right for typography contrast */}
-          <div className="absolute inset-0 bg-gradient-to-r from-dark-100/95 via-dark-100/70 to-transparent z-10" />
-          {/* Top fade for Navbar */}
-          <div className="absolute inset-0 bg-gradient-to-b from-dark-100/80 via-transparent to-transparent z-10" />
-          {/* Bottom melt into next section */}
-          <div className="absolute inset-0 bg-gradient-to-t from-dark-100 via-dark-100/75 to-transparent z-10" />
+          {/* Precision Gradient Overlays:
+              - Left vignette only covers ~55% of the width so the right side is 100% visible & punchy.
+              - Top fade restricted to top 32px for Navbar.
+              - Bottom fade restricted to bottom 40px to blend into next section. */}
+          <div className="absolute inset-0 bg-gradient-to-r from-dark-100/90 via-dark-100/40 via-55% to-transparent z-10 pointer-events-none" />
+          <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-dark-100/80 via-transparent to-transparent z-10 pointer-events-none" />
+          <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-dark-100 via-dark-100/60 to-transparent z-10 pointer-events-none" />
 
-          {/* Dynamic Scene Accent Glow */}
+          {/* Dynamic Scene Ambient Neon Aura */}
           <div
-            className="absolute -top-32 -left-32 w-96 h-96 rounded-full blur-[140px] pointer-events-none transition-all duration-1000 z-10"
+            className="absolute -top-24 -left-24 w-[500px] h-[500px] rounded-full blur-[160px] pointer-events-none transition-all duration-1000 z-10 opacity-70"
             style={{ backgroundColor: activeScene.glowColor }}
           />
         </div>
@@ -232,37 +278,40 @@ const Landing = () => {
           <AnimatePresence mode="wait">
             <motion.div
               key={activeScene.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 30 }}
               transition={{ duration: 0.5, ease: 'easeOut' }}
-              className="max-w-3xl space-y-4 sm:space-y-6"
+              className="max-w-2xl sm:max-w-3xl space-y-4 sm:space-y-6"
             >
               {/* Badge & Native Japanese Title */}
               <div className="flex items-center gap-3">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase bg-white/10 backdrop-blur-md border border-white/20 text-white">
-                  <SparklesIcon className="w-3.5 h-3.5 text-primary" />
+                <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-extrabold tracking-wider uppercase bg-black/60 backdrop-blur-md border border-white/20 text-white shadow-lg">
+                  <SparklesIcon className="w-4 h-4 text-primary fill-primary" />
                   <span>{activeScene.badge}</span>
                 </span>
-                <span className="text-xs text-gray-400 font-medium tracking-widest hidden sm:inline">
+                <span className="text-xs text-white/80 font-semibold tracking-widest uppercase bg-black/40 px-3 py-1 rounded-full backdrop-blur-md border border-white/10 hidden sm:inline">
                   {activeScene.titleJapanese}
+                </span>
+                <span className="text-xs text-primary font-bold tracking-wide uppercase hidden md:inline">
+                  {activeScene.tag}
                 </span>
               </div>
 
               {/* Main Headline */}
-              <h1 className="text-4xl sm:text-6xl lg:text-7xl font-display font-extrabold text-white tracking-tight leading-none drop-shadow-xl">
+              <h1 className="text-4xl sm:text-6xl lg:text-7xl font-display font-black text-white tracking-tight leading-none drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)]">
                 {activeScene.title}
               </h1>
 
               {/* Tagline */}
               <p
-                className={`text-base sm:text-xl font-semibold bg-gradient-to-r ${activeScene.accentColor} bg-clip-text text-transparent drop-shadow`}
+                className={`text-base sm:text-2xl font-bold bg-gradient-to-r ${activeScene.accentColor} bg-clip-text text-transparent drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]`}
               >
                 {activeScene.tagline}
               </p>
 
               {/* Description */}
-              <p className="text-sm sm:text-base text-gray-300 max-w-2xl leading-relaxed drop-shadow line-clamp-3 sm:line-clamp-none">
+              <p className="text-sm sm:text-base text-gray-200 max-w-2xl leading-relaxed drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] line-clamp-3 sm:line-clamp-none font-medium">
                 {activeScene.description}
               </p>
 
@@ -271,27 +320,27 @@ const Landing = () => {
                 {/* Main Enter Catalog Button */}
                 <Link
                   to="/home"
-                  className="inline-flex items-center gap-2 px-6 sm:px-8 py-3.5 bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-white rounded-xl font-bold text-sm sm:text-base shadow-lg shadow-primary/30 hover:scale-105 active:scale-95 transition-all duration-200"
+                  className="inline-flex items-center gap-2.5 px-7 sm:px-9 py-4 bg-gradient-to-r from-primary via-red-600 to-secondary hover:shadow-[0_0_30px_rgba(230,57,70,0.5)] text-white rounded-xl font-extrabold text-sm sm:text-base shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 group"
                 >
                   <span>Explore Catalog</span>
-                  <ArrowRightIcon className="w-4 h-4" />
+                  <ArrowRightIcon className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
 
                 {/* Direct Watch Episode 1 for Active Scene */}
                 <Link
                   to={activeScene.watchUrl}
-                  className="inline-flex items-center gap-2 px-5 sm:px-6 py-3.5 bg-dark-200/80 hover:bg-dark-300 text-white rounded-xl font-semibold text-sm sm:text-base backdrop-blur-md border border-white/15 hover:border-white/30 hover:scale-105 active:scale-95 transition-all duration-200 shadow-md"
+                  className="inline-flex items-center gap-2 px-6 py-4 bg-black/60 hover:bg-black/80 text-white rounded-xl font-bold text-sm sm:text-base backdrop-blur-md border border-white/25 hover:border-white/50 hover:scale-105 active:scale-95 transition-all duration-200 shadow-xl"
                 >
-                  <PlayIcon className="w-4 h-4 text-primary fill-primary" />
+                  <PlayIcon className="w-5 h-5 text-primary fill-primary" />
                   <span>Watch Ep 1</span>
                 </Link>
 
                 {/* Manga Sanctuary Link */}
                 <Link
                   to="/manga"
-                  className="inline-flex items-center gap-2 px-4 sm:px-5 py-3.5 text-gray-300 hover:text-white rounded-xl font-medium text-sm hover:bg-white/5 transition-all duration-200"
+                  className="inline-flex items-center gap-2 px-5 py-4 text-gray-200 hover:text-white rounded-xl font-semibold text-sm hover:bg-white/10 backdrop-blur-sm border border-transparent hover:border-white/10 transition-all duration-200"
                 >
-                  <BookOpenIcon className="w-4 h-4" />
+                  <BookOpenIcon className="w-5 h-5" />
                   <span>Read Manga</span>
                 </Link>
               </div>
@@ -301,7 +350,7 @@ const Landing = () => {
 
         {/* Interactive Bottom Timeline / Scene Switcher */}
         <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8 w-full">
-          <div className="bg-dark-200/70 backdrop-blur-xl border border-white/10 rounded-2xl p-2 sm:p-3 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-3">
+          <div className="bg-black/60 backdrop-blur-2xl border border-white/15 rounded-2xl p-2.5 sm:p-3 shadow-[0_10px_40px_rgba(0,0,0,0.6)] flex flex-col md:flex-row items-center justify-between gap-3">
             {/* Scene Selector Tabs */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full md:w-auto flex-1">
               {SCENES.map((scene, idx) => {
@@ -311,30 +360,30 @@ const Landing = () => {
                     key={scene.id}
                     type="button"
                     onClick={() => handleSelectScene(idx)}
-                    className={`relative p-2.5 sm:p-3 rounded-xl text-left transition-all overflow-hidden group cursor-pointer ${
+                    className={`relative p-3 rounded-xl text-left transition-all overflow-hidden group cursor-pointer ${
                       isActive
-                        ? 'bg-white/10 text-white shadow-inner'
-                        : 'text-gray-400 hover:text-white hover:bg-white/5'
+                        ? 'bg-white/15 text-white shadow-lg border border-white/20'
+                        : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
                     }`}
                   >
                     {/* Active Animated Progress Bar Indicator */}
                     {isActive && (
                       <div
-                        className="absolute bottom-0 left-0 h-1 bg-gradient-to-r from-primary to-secondary transition-all ease-linear"
+                        className="absolute bottom-0 left-0 h-1 bg-gradient-to-r from-primary via-purple-500 to-secondary transition-all ease-linear shadow-[0_0_10px_rgba(230,57,70,0.8)]"
                         style={{ width: `${progress}%` }}
                       />
                     )}
 
-                    <div className="flex items-center justify-between text-[11px] font-bold text-gray-400 mb-0.5">
+                    <div className="flex items-center justify-between text-[11px] font-black tracking-wider uppercase text-gray-400 mb-0.5">
                       <span className={isActive ? 'text-primary font-bold' : ''}>0{idx + 1}</span>
                       {isActive && isPlaying && (
-                        <span className="flex h-1.5 w-1.5 relative">
+                        <span className="flex h-2 w-2 relative">
                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
                         </span>
                       )}
                     </div>
-                    <div className="text-xs sm:text-sm font-semibold truncate">
+                    <div className="text-xs sm:text-sm font-bold truncate">
                       {scene.title}
                     </div>
                   </button>
@@ -348,7 +397,7 @@ const Landing = () => {
                 type="button"
                 onClick={handlePrevScene}
                 aria-label="Previous Scene"
-                className="p-2 rounded-lg bg-dark-100 hover:bg-dark-300 text-gray-400 hover:text-white border border-white/5 transition-colors cursor-pointer"
+                className="p-2.5 rounded-xl bg-white/5 hover:bg-white/15 text-gray-300 hover:text-white border border-white/10 transition-all cursor-pointer"
               >
                 <ChevronLeftIcon className="w-4 h-4" />
               </button>
@@ -356,15 +405,15 @@ const Landing = () => {
                 type="button"
                 onClick={() => setIsPlaying(!isPlaying)}
                 aria-label={isPlaying ? 'Pause Auto-Play' : 'Resume Auto-Play'}
-                className="p-2 rounded-lg bg-dark-100 hover:bg-dark-300 text-primary border border-white/5 transition-colors cursor-pointer"
+                className="p-2.5 rounded-xl bg-white/5 hover:bg-white/15 text-primary border border-white/10 transition-all cursor-pointer"
               >
-                {isPlaying ? <PauseIcon className="w-4 h-4" /> : <PlayIcon className="w-4 h-4" />}
+                {isPlaying ? <PauseIcon className="w-4 h-4 fill-primary" /> : <PlayIcon className="w-4 h-4 fill-primary" />}
               </button>
               <button
                 type="button"
                 onClick={handleNextScene}
                 aria-label="Next Scene"
-                className="p-2 rounded-lg bg-dark-100 hover:bg-dark-300 text-gray-400 hover:text-white border border-white/5 transition-colors cursor-pointer"
+                className="p-2.5 rounded-xl bg-white/5 hover:bg-white/15 text-gray-300 hover:text-white border border-white/10 transition-all cursor-pointer"
               >
                 <ChevronRightIcon className="w-4 h-4" />
               </button>
@@ -374,76 +423,106 @@ const Landing = () => {
       </section>
 
       {/* =========================================================================
-          SECTION 2: LIVE NOW TRENDING QUICK STRIP
+          SECTION 2: CINEMATIC NOW TRENDING SHOWCASE (MOTION CARDS & NEON GLOW)
       ========================================================================= */}
-      <section className="py-12 border-y border-white/5 bg-dark-200/40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-6">
+      <section className="relative py-20 border-y border-white/10 bg-gradient-to-b from-dark-100 via-dark-200/50 to-dark-100 overflow-hidden">
+        {/* Ambient Cosmic Glow Blobs in Background */}
+        <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-96 h-96 bg-primary/15 rounded-full blur-[140px] pointer-events-none" />
+        <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-96 h-96 bg-purple-600/15 rounded-full blur-[140px] pointer-events-none" />
+
+        {/* Subtle Cyberpunk Dot Mesh Grid */}
+        <div className="absolute inset-0 bg-[radial-gradient(#ffffff12_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
+
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
             <div>
-              <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider mb-1">
-                <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                Live Broadcast
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-widest bg-primary/10 border border-primary/30 text-primary mb-2 shadow-[0_0_15px_rgba(230,57,70,0.3)]">
+                <FireIcon className="w-4 h-4 fill-primary" />
+                <span>Live Broadcast Spotlight</span>
               </div>
-              <h2 className="text-2xl font-bold text-white tracking-tight">Now Trending on AnimeVerse</h2>
+              <h2 className="text-3xl sm:text-4xl font-display font-black text-white tracking-tight">
+                Now Trending in the Universe
+              </h2>
+              <p className="text-sm text-gray-400 mt-1">
+                Highest ranked anime broadcast this week with instant 1080p stream availability.
+              </p>
             </div>
             <Link
               to="/home"
-              className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 hover:bg-primary text-white font-bold text-xs sm:text-sm border border-white/10 hover:border-primary transition-all duration-300 group hover:shadow-[0_0_20px_rgba(230,57,70,0.5)] shrink-0"
             >
               <span>View Full Catalog</span>
-              <ChevronRightIcon className="w-4 h-4" />
+              <ChevronRightIcon className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
 
           {loadingTrending ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-5">
               {[...Array(6)].map((_, i) => (
-                <div key={i} className="aspect-[3/4] bg-dark-300 rounded-xl animate-pulse" />
+                <div key={i} className="aspect-[3/4] bg-dark-300 rounded-2xl animate-pulse border border-white/5" />
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
-              {trendingAnime.map((item) => {
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-5">
+              {trendingAnime.map((item, index) => {
                 const id = item.malId || item.mal_id || item.id;
                 const title = item.title || item.titleEnglish || 'Unknown Anime';
                 const image = item.imageUrl || item.image || item.images?.jpg?.large_image_url;
                 const score = item.score ? Number(item.score).toFixed(1) : null;
 
                 return (
-                  <Link
+                  <motion.div
                     key={id}
-                    to={`/anime/${id}`}
-                    className="group relative rounded-xl overflow-hidden bg-dark-200 border border-white/5 hover:border-primary/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/10 flex flex-col"
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5, delay: index * 0.08 }}
                   >
-                    <div className="aspect-[3/4] relative overflow-hidden bg-dark-300">
-                      {image && (
-                        <img
-                          src={image}
-                          alt={title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center shadow-lg transform scale-75 group-hover:scale-100 transition-transform">
-                          <PlayIcon className="w-5 h-5 ml-0.5 fill-white" />
+                    <Link
+                      to={`/anime/${id}`}
+                      className="group relative rounded-2xl overflow-hidden bg-dark-200/90 border border-white/10 hover:border-primary/80 transition-all duration-300 hover:-translate-y-2.5 hover:shadow-[0_15px_35px_-5px_rgba(230,57,70,0.35)] flex flex-col h-full block"
+                    >
+                      <div className="aspect-[3/4] relative overflow-hidden bg-dark-300">
+                        {image && (
+                          <img
+                            src={image}
+                            alt={title}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 filter brightness-95 group-hover:brightness-105"
+                          />
+                        )}
+
+                        {/* Top Rank Badge */}
+                        <div className="absolute top-2.5 left-2.5 flex items-center gap-1 bg-black/80 backdrop-blur-md px-2 py-0.5 rounded-lg text-[10px] font-black uppercase text-white border border-white/15">
+                          <span className="text-primary">#0{index + 1}</span>
+                        </div>
+
+                        {/* Rating Badge */}
+                        {score && (
+                          <div className="absolute top-2.5 right-2.5 flex items-center gap-1 bg-black/80 backdrop-blur-md px-2 py-0.5 rounded-lg text-[11px] font-bold text-yellow-400 border border-white/15">
+                            <StarIcon className="w-3.5 h-3.5 fill-yellow-400" />
+                            <span>{score}</span>
+                          </div>
+                        )}
+
+                        {/* Hover Overlay with Animated Play Trigger */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-dark-100 via-dark-100/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                          <div className="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center shadow-[0_0_25px_rgba(230,57,70,0.8)] transform scale-75 group-hover:scale-100 transition-transform duration-300">
+                            <PlayIcon className="w-6 h-6 ml-0.5 fill-white" />
+                          </div>
                         </div>
                       </div>
-                      {score && (
-                        <div className="absolute top-2 right-2 flex items-center gap-0.5 bg-black/70 backdrop-blur-md px-1.5 py-0.5 rounded text-[11px] font-bold text-yellow-400 border border-white/10">
-                          <StarIcon className="w-3 h-3 fill-yellow-400" />
-                          <span>{score}</span>
+
+                      <div className="p-3 bg-gradient-to-t from-dark-300/90 to-dark-200">
+                        <h3 className="text-xs font-bold text-white truncate group-hover:text-primary transition-colors">
+                          {title}
+                        </h3>
+                        <div className="flex items-center justify-between text-[11px] text-gray-400 mt-1">
+                          <span>{item.type || 'TV'}</span>
+                          <span>{item.year || '2024'}</span>
                         </div>
-                      )}
-                    </div>
-                    <div className="p-2.5">
-                      <h3 className="text-xs font-semibold text-white truncate group-hover:text-primary transition-colors">
-                        {title}
-                      </h3>
-                      <p className="text-[11px] text-gray-400 mt-0.5">
-                        {item.type || 'TV'} {item.year ? `• ${item.year}` : ''}
-                      </p>
-                    </div>
-                  </Link>
+                      </div>
+                    </Link>
+                  </motion.div>
                 );
               })}
             </div>
@@ -452,214 +531,509 @@ const Landing = () => {
       </section>
 
       {/* =========================================================================
-          SECTION 3: BENTO GRID FEATURE SHOWCASE
+          SECTION 3: BENTO GRID WITH LIVE UI SIMULATIONS & MOTION CARDS
       ========================================================================= */}
-      <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-2xl mx-auto mb-14">
-          <span className="text-xs font-bold text-primary uppercase tracking-widest bg-primary/10 px-3 py-1 rounded-full border border-primary/20">
-            Engineered For Anime & Manga Fans
-          </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white mt-3 tracking-tight">
-            Everything You Need In One Multiverse
+      <section className="relative py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Glow backdrop */}
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-primary/5 rounded-full blur-[180px] pointer-events-none" />
+
+        <div className="text-center max-w-2xl mx-auto mb-16">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black tracking-widest uppercase bg-primary/10 border border-primary/30 text-primary">
+            <BoltIcon className="w-3.5 h-3.5 fill-primary" />
+            <span>Architecture & Experience</span>
+          </div>
+          <h2 className="text-3xl sm:text-5xl font-display font-black text-white mt-3 tracking-tight">
+            Engineered Beyond Ordinary Streaming
           </h2>
           <p className="text-sm sm:text-base text-gray-400 mt-3 leading-relaxed">
-            Forget annoying ads, broken players, and scattered bookmarks. AnimeVerse combines streaming, manga, and progress tracking in a single seamless platform.
+            Every feature on AnimeVerse is designed from scratch to remove friction, kill disruptive ads, and give you an unparalleled viewing sanctuary.
           </p>
         </div>
 
         {/* Bento Grid Layout */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-          {/* Bento Card 1: Web Player (Span 7) */}
-          <div className="md:col-span-7 bg-gradient-to-br from-dark-200 to-dark-300/80 rounded-2xl p-6 sm:p-8 border border-white/10 relative overflow-hidden shadow-xl flex flex-col justify-between">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 relative z-10">
+          {/* ==========================================
+              BENTO CARD 1: CINEMA WEB PLAYER (Span 7)
+          ========================================== */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="md:col-span-7 bg-gradient-to-br from-dark-200/90 via-dark-300/80 to-dark-200/90 rounded-3xl p-6 sm:p-8 border border-white/15 relative overflow-hidden shadow-2xl flex flex-col justify-between group hover:border-primary/50 transition-all duration-300"
+          >
+            {/* Ambient Background Grid */}
+            <div className="absolute top-0 right-0 w-80 h-80 bg-primary/10 rounded-full blur-[100px] pointer-events-none" />
+
             <div>
-              <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center mb-5">
-                <TvIcon className="w-6 h-6" />
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 rounded-2xl bg-primary/15 border border-primary/30 text-primary flex items-center justify-center shadow-lg">
+                  <TvIcon className="w-6 h-6 fill-primary/80" />
+                </div>
+                <span className="px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-white/10 text-white border border-white/10">
+                  Custom Player Engine
+                </span>
               </div>
-              <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">
+              <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2">
                 Cinema-Grade Web Player
               </h3>
               <p className="text-sm text-gray-300 leading-relaxed max-w-xl">
-                Dual-server streaming with MegaPlay & Zoko redundancy. Enjoy Lights-Off cinema mode, Theater view, auto-next episode triggers, and keyboard shortcuts.
+                Stream without intrusive popups. Switch seamlessly between Server 1 (MegaPlay) and Server 2 (Zoko) with auto-skip intro, theater mode, and cinema lights-off.
               </p>
             </div>
 
-            {/* Keyboard Shortcuts Interactive Pill Preview */}
-            <div className="mt-6 pt-6 border-t border-white/5">
-              <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2.5">
-                Instant Keyboard Shortcuts:
+            {/* LIVE INTERACTIVE PLAYER MOCKUP */}
+            <div className="mt-8 bg-black/80 rounded-2xl p-4 border border-white/10 shadow-2xl">
+              {/* Player Topbar */}
+              <div className="flex items-center justify-between text-xs pb-3 border-b border-white/10">
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                  <span className="font-semibold text-gray-200">
+                    {mockServer === 'server1' ? 'Server 1: MegaPlay' : 'Server 2: Zoko'}
+                  </span>
+                  <span className="px-1.5 py-0.5 rounded bg-primary/20 text-primary text-[10px] font-bold">
+                    1080p HD
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setMockServer('server1')}
+                    className={`px-2 py-1 rounded text-[11px] font-bold cursor-pointer transition-colors ${
+                      mockServer === 'server1'
+                        ? 'bg-primary text-white'
+                        : 'bg-white/5 text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    Server 1
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMockServer('server2')}
+                    className={`px-2 py-1 rounded text-[11px] font-bold cursor-pointer transition-colors ${
+                      mockServer === 'server2'
+                        ? 'bg-primary text-white'
+                        : 'bg-white/5 text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    Server 2
+                  </button>
+                </div>
               </div>
-              <div className="flex flex-wrap gap-2 text-xs">
-                <span className="px-2.5 py-1 rounded-md bg-dark-100 border border-white/10 text-gray-300">
-                  <kbd className="font-mono text-primary font-bold">[N]</kbd> Next Ep
+
+              {/* Player Screen Frame */}
+              <div className="relative aspect-video rounded-xl overflow-hidden mt-3 bg-dark-100 flex items-center justify-center group/screen">
+                <img
+                  src="/images/hero/solo-leveling.jpg"
+                  alt="Player Demo"
+                  className="absolute inset-0 w-full h-full object-cover filter brightness-75"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40" />
+
+                {/* Simulated Play Trigger */}
+                <div className="relative z-10 w-14 h-14 rounded-full bg-primary/90 text-white flex items-center justify-center shadow-[0_0_30px_rgba(230,57,70,0.8)]">
+                  <PlayIcon className="w-7 h-7 ml-0.5 fill-white" />
+                </div>
+
+                {/* Animated Equalizer Wave */}
+                <div className="absolute bottom-3 left-4 flex items-end gap-1 h-5">
+                  <span className="w-1 bg-primary animate-pulse h-3 rounded-full" />
+                  <span className="w-1 bg-primary animate-pulse h-5 rounded-full [animation-delay:150ms]" />
+                  <span className="w-1 bg-primary animate-pulse h-2 rounded-full [animation-delay:300ms]" />
+                  <span className="w-1 bg-primary animate-pulse h-4 rounded-full [animation-delay:450ms]" />
+                  <span className="text-[10px] text-gray-300 ml-2 font-mono font-bold">18:42 / 24:10</span>
+                </div>
+
+                <div className="absolute bottom-3 right-4 flex items-center gap-2 text-[10px] text-gray-300 font-bold bg-black/60 px-2 py-1 rounded backdrop-blur-sm">
+                  <span>Sub & Dub</span>
+                </div>
+              </div>
+
+              {/* Keyboard Shortcuts Interactive Pill Preview */}
+              <div className="mt-4 pt-3 border-t border-white/5 flex flex-wrap gap-1.5 text-[11px]">
+                <span className="px-2 py-1 rounded bg-dark-100 border border-white/10 text-gray-300">
+                  <kbd className="font-mono text-primary font-bold">[N]</kbd> Next
                 </span>
-                <span className="px-2.5 py-1 rounded-md bg-dark-100 border border-white/10 text-gray-300">
-                  <kbd className="font-mono text-primary font-bold">[P]</kbd> Prev Ep
+                <span className="px-2 py-1 rounded bg-dark-100 border border-white/10 text-gray-300">
+                  <kbd className="font-mono text-primary font-bold">[P]</kbd> Prev
                 </span>
-                <span className="px-2.5 py-1 rounded-md bg-dark-100 border border-white/10 text-gray-300">
-                  <kbd className="font-mono text-primary font-bold">[S]</kbd> Switch Server
+                <span className="px-2 py-1 rounded bg-dark-100 border border-white/10 text-gray-300">
+                  <kbd className="font-mono text-primary font-bold">[S]</kbd> Server
                 </span>
-                <span className="px-2.5 py-1 rounded-md bg-dark-100 border border-white/10 text-gray-300">
+                <span className="px-2 py-1 rounded bg-dark-100 border border-white/10 text-gray-300">
                   <kbd className="font-mono text-primary font-bold">[T]</kbd> Theater
                 </span>
-                <span className="px-2.5 py-1 rounded-md bg-dark-100 border border-white/10 text-gray-300">
-                  <kbd className="font-mono text-primary font-bold">[L]</kbd> Lights Off
+                <span className="px-2 py-1 rounded bg-dark-100 border border-white/10 text-gray-300">
+                  <kbd className="font-mono text-primary font-bold">[L]</kbd> Lights
                 </span>
-                <span className="px-2.5 py-1 rounded-md bg-dark-100 border border-white/10 text-gray-300">
+                <span className="px-2 py-1 rounded bg-dark-100 border border-white/10 text-gray-300">
                   <kbd className="font-mono text-primary font-bold">[F]</kbd> Fullscreen
                 </span>
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          {/* Bento Card 2: Manga Sanctuary (Span 5) */}
-          <div className="md:col-span-5 bg-gradient-to-br from-dark-200 to-dark-300/80 rounded-2xl p-6 sm:p-8 border border-white/10 relative overflow-hidden shadow-xl flex flex-col justify-between">
+          {/* ==========================================
+              BENTO CARD 2: MANGA SANCTUARY (Span 5)
+          ========================================== */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="md:col-span-5 bg-gradient-to-br from-purple-950/40 via-dark-200/90 to-dark-300/90 rounded-3xl p-6 sm:p-8 border border-white/15 relative overflow-hidden shadow-2xl flex flex-col justify-between group hover:border-purple-500/50 transition-all duration-300"
+          >
+            {/* Ambient Purple Blob */}
+            <div className="absolute top-0 right-0 w-80 h-80 bg-purple-600/15 rounded-full blur-[120px] pointer-events-none" />
+
             <div>
-              <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center mb-5">
-                <BookOpenIcon className="w-6 h-6" />
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 rounded-2xl bg-purple-500/15 border border-purple-500/30 text-purple-400 flex items-center justify-center shadow-lg">
+                  <BookOpenIcon className="w-6 h-6 fill-purple-400/80" />
+                </div>
+                <span className="px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-purple-500/10 text-purple-300 border border-purple-500/20">
+                  MangaDex Reader
+                </span>
               </div>
-              <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">
+              <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2">
                 Built-in Manga Sanctuary
               </h3>
               <p className="text-sm text-gray-300 leading-relaxed">
-                Read thousands of official and scanlated manga series with MangaDex integration. Full chapter selector and continuous Webtoon vertical scrolling for mobile.
+                Read thousands of official and scanlated manga series with zero popup ads. Full chapter selector and continuous Webtoon vertical scrolling for mobile.
               </p>
             </div>
-            <div className="mt-6">
+
+            {/* 3D Floating Manga Spread Preview */}
+            <div className="mt-8 relative h-48 bg-black/60 rounded-2xl p-4 border border-white/10 overflow-hidden flex items-center justify-center">
+              {/* Tilted Card 1 */}
+              <div className="absolute w-36 h-48 bg-dark-100 rounded-xl border border-white/20 shadow-2xl transform -rotate-6 -translate-x-12 translate-y-4 overflow-hidden">
+                <img
+                  src="/images/hero/jujutsu-kaisen.jpg"
+                  alt="Manga Preview"
+                  className="w-full h-full object-cover filter brightness-90"
+                />
+                <div className="absolute bottom-2 left-2 right-2 bg-black/80 px-2 py-0.5 rounded text-[10px] font-bold text-white truncate">
+                  JJK Chapter 265
+                </div>
+              </div>
+
+              {/* Tilted Card 2 (Front) */}
+              <div className="absolute w-40 h-52 bg-dark-200 rounded-xl border border-purple-500/40 shadow-2xl transform rotate-6 translate-x-8 translate-y-2 overflow-hidden">
+                <img
+                  src="/images/hero/solo-leveling.jpg"
+                  alt="Manga Preview"
+                  className="w-full h-full object-cover filter brightness-90"
+                />
+                <div className="absolute bottom-2 left-2 right-2 bg-black/80 px-2 py-0.5 rounded text-[10px] font-bold text-purple-300 truncate">
+                  Solo Leveling Ch. 179
+                </div>
+              </div>
+
+              {/* Webtoon Pill */}
+              <div className="absolute top-3 left-3 bg-purple-500/90 text-white font-extrabold text-[10px] px-2.5 py-1 rounded-full shadow-lg z-20">
+                Webtoon Infinite Scroll
+              </div>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-white/5">
               <Link
                 to="/manga"
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-purple-400 hover:text-purple-300 transition-colors"
+                className="inline-flex items-center gap-2 text-sm font-bold text-purple-400 hover:text-purple-300 transition-colors"
               >
-                <span>Browse Manga Catalog</span>
-                <ChevronRightIcon className="w-3.5 h-3.5" />
+                <span>Browse Manga Library</span>
+                <ArrowRightIcon className="w-4 h-4" />
               </Link>
             </div>
-          </div>
+          </motion.div>
 
-          {/* Bento Card 3: Auto-Progress & Watchlist (Span 5) */}
-          <div className="md:col-span-5 bg-gradient-to-br from-dark-200 to-dark-300/80 rounded-2xl p-6 sm:p-8 border border-white/10 relative overflow-hidden shadow-xl flex flex-col justify-between">
+          {/* ==========================================
+              BENTO CARD 3: SMART AUTO-PROGRESS (Span 5)
+          ========================================== */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.15 }}
+            className="md:col-span-5 bg-gradient-to-br from-emerald-950/40 via-dark-200/90 to-dark-300/90 rounded-3xl p-6 sm:p-8 border border-white/15 relative overflow-hidden shadow-2xl flex flex-col justify-between group hover:border-emerald-500/50 transition-all duration-300"
+          >
+            {/* Ambient Emerald Blob */}
+            <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-600/15 rounded-full blur-[120px] pointer-events-none" />
+
             <div>
-              <div className="w-12 h-12 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 flex items-center justify-center mb-5">
-                <BookmarkSquareIcon className="w-6 h-6" />
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center shadow-lg">
+                  <BookmarkSquareIcon className="w-6 h-6 fill-emerald-400/80" />
+                </div>
+                <span className="px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                  Cloud Watchlist
+                </span>
               </div>
-              <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">
-                Smart Watchlist & Auto-Save
+              <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2">
+                Smart Auto-Progress
               </h3>
               <p className="text-sm text-gray-300 leading-relaxed">
-                Never lose your spot again. Episodes automatically mark as watched at 85% progress. Organise your lists into Watching, Completed, and Plan to Watch.
+                Never lose your spot again. Episodes automatically mark as watched at 85% completion. Organise your lists into Watching, Completed, and Plan to Watch.
               </p>
             </div>
-            <div className="mt-6">
+
+            {/* LIVE AUTO-PROGRESS SIMULATION WIDGET */}
+            <div className="mt-8 bg-black/60 rounded-2xl p-4 border border-white/10 space-y-3">
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <CheckCircleIcon className="w-4 h-4 text-emerald-400" />
+                  <span className="font-bold text-white">Demon Slayer — Episode 11</span>
+                </div>
+                <span className="text-emerald-400 font-mono font-bold text-xs">
+                  {mockProgressPercent}% Watched
+                </span>
+              </div>
+
+              {/* Interactive Progress Bar */}
+              <div className="h-2 w-full bg-dark-100 rounded-full overflow-hidden border border-white/5">
+                <div
+                  className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-500"
+                  style={{ width: `${mockProgressPercent}%` }}
+                />
+              </div>
+
+              <div className="flex items-center justify-between text-[11px] text-gray-400 pt-1">
+                <span>Auto-Saved to History</span>
+                <span className="text-gray-300 font-medium">Ready for Episode 12</span>
+              </div>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-white/5">
               <Link
                 to="/watchlist"
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-green-400 hover:text-green-300 transition-colors"
+                className="inline-flex items-center gap-2 text-sm font-bold text-emerald-400 hover:text-emerald-300 transition-colors"
               >
-                <span>View Your Watchlist</span>
-                <ChevronRightIcon className="w-3.5 h-3.5" />
+                <span>Open Watchlist Tracker</span>
+                <ArrowRightIcon className="w-4 h-4" />
               </Link>
             </div>
-          </div>
+          </motion.div>
 
-          {/* Bento Card 4: AniList & MAL Intelligence (Span 7) */}
-          <div className="md:col-span-7 bg-gradient-to-br from-dark-200 to-dark-300/80 rounded-2xl p-6 sm:p-8 border border-white/10 relative overflow-hidden shadow-xl flex flex-col justify-between">
+          {/* ==========================================
+              BENTO CARD 4: ANILIST & MAL INTEL (Span 7)
+          ========================================== */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="md:col-span-7 bg-gradient-to-br from-amber-950/40 via-dark-200/90 to-dark-300/90 rounded-3xl p-6 sm:p-8 border border-white/15 relative overflow-hidden shadow-2xl flex flex-col justify-between group hover:border-amber-500/50 transition-all duration-300"
+          >
+            {/* Ambient Amber Blob */}
+            <div className="absolute top-0 right-0 w-80 h-80 bg-amber-600/15 rounded-full blur-[120px] pointer-events-none" />
+
             <div>
-              <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mb-5">
-                <SparklesIcon className="w-6 h-6" />
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center shadow-lg">
+                  <SparklesIcon className="w-6 h-6 fill-amber-400/80" />
+                </div>
+                <span className="px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                  AniList & MAL Synced
+                </span>
               </div>
-              <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">
-                Powered by AniList & MyAnimeList
+              <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2">
+                Deep Studio & Community Data
               </h3>
-              <p className="text-sm text-gray-300 leading-relaxed">
-                Every title is backed by high-resolution studio banner art, voice actor staff listings, community review scores, and related anime recommendations updated in real time.
+              <p className="text-sm text-gray-300 leading-relaxed max-w-xl">
+                Every title features official 4K studio banner art, voice actor production rosters, community review scores, and recommendation graphs updated in real time.
               </p>
             </div>
+
+            {/* Simulated Live Community Rating Chips */}
+            <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="p-3 bg-black/60 rounded-xl border border-white/10">
+                <div className="text-[11px] text-gray-400 font-semibold">AniList Community</div>
+                <div className="text-lg font-extrabold text-white flex items-center gap-1 mt-0.5">
+                  <StarIcon className="w-4 h-4 fill-yellow-400" />
+                  <span>9.2 / 10</span>
+                </div>
+                <div className="text-[10px] text-gray-500">340k+ user ratings</div>
+              </div>
+
+              <div className="p-3 bg-black/60 rounded-xl border border-white/10">
+                <div className="text-[11px] text-gray-400 font-semibold">Studio Production</div>
+                <div className="text-sm font-extrabold text-white mt-1 truncate">
+                  MAPPA & ufotable
+                </div>
+                <div className="text-[10px] text-gray-500">Official Licensors</div>
+              </div>
+
+              <div className="p-3 bg-black/60 rounded-xl border border-white/10 col-span-2 sm:col-span-1">
+                <div className="text-[11px] text-gray-400 font-semibold">Streaming Ad Count</div>
+                <div className="text-lg font-extrabold text-green-400 mt-0.5">
+                  0 Popups
+                </div>
+                <div className="text-[10px] text-gray-500">Pure clean playback</div>
+              </div>
+            </div>
+
             <div className="mt-6 pt-4 border-t border-white/5 flex flex-wrap items-center gap-4 text-xs text-gray-400">
               <span className="flex items-center gap-1.5">
                 <ShieldCheckIcon className="w-4 h-4 text-primary" />
-                <span>Zero Intrusive Popups</span>
+                <span>Zero Malware or Fake Buttons</span>
               </span>
               <span className="flex items-center gap-1.5">
                 <ShieldCheckIcon className="w-4 h-4 text-primary" />
-                <span>100% Free Access</span>
-              </span>
-              <span className="flex items-center gap-1.5">
-                <ShieldCheckIcon className="w-4 h-4 text-primary" />
-                <span>Daily Broadcast Updates</span>
+                <span>Daily Broadcast Schedule</span>
               </span>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* =========================================================================
-          SECTION 4: PLATFORM STATS STRIP
+          SECTION 4: WHY ANIMEVERSE COMPARISON MATRIX (SHIMMERING TABLE)
       ========================================================================= */}
-      <section className="py-12 bg-dark-200/50 border-y border-white/5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-            <div className="p-4">
-              <div className="text-3xl sm:text-4xl font-extrabold text-white font-display mb-1">
-                15,000+
-              </div>
-              <div className="text-xs sm:text-sm text-gray-400 font-medium">Anime Episodes</div>
-            </div>
-            <div className="p-4">
-              <div className="text-3xl sm:text-4xl font-extrabold text-primary font-display mb-1">
-                8,000+
-              </div>
-              <div className="text-xs sm:text-sm text-gray-400 font-medium">Manga Chapters</div>
-            </div>
-            <div className="p-4">
-              <div className="text-3xl sm:text-4xl font-extrabold text-white font-display mb-1">
-                1080p
-              </div>
-              <div className="text-xs sm:text-sm text-gray-400 font-medium">Ultra HD Quality</div>
-            </div>
-            <div className="p-4">
-              <div className="text-3xl sm:text-4xl font-extrabold text-secondary font-display mb-1">
-                0
-              </div>
-              <div className="text-xs sm:text-sm text-gray-400 font-medium">Disruptive Ads</div>
-            </div>
+      <section className="py-20 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center max-w-2xl mx-auto mb-14">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black tracking-widest uppercase bg-primary/10 border border-primary/30 text-primary">
+            <CheckCircleIcon className="w-3.5 h-3.5" />
+            <span>The Clear Difference</span>
           </div>
-        </div>
-      </section>
-
-      {/* =========================================================================
-          SECTION 5: FAQ ACCORDION
-      ========================================================================= */}
-      <section className="py-20 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-            Frequently Asked Questions
+          <h2 className="text-3xl sm:text-4xl font-display font-black text-white mt-3 tracking-tight">
+            Why Fans Switch to AnimeVerse
           </h2>
           <p className="text-sm text-gray-400 mt-2">
-            Everything you need to know about streaming and reading on AnimeVerse.
+            See how AnimeVerse completely redefines free anime streaming and reading.
           </p>
         </div>
 
-        <div className="space-y-3">
+        <div className="bg-gradient-to-b from-dark-200/90 to-dark-300/90 rounded-3xl p-6 sm:p-8 border border-white/15 shadow-2xl overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-white/10 text-xs sm:text-sm font-extrabold uppercase tracking-wider text-gray-400">
+                  <th className="py-4 px-4">Experience Feature</th>
+                  <th className="py-4 px-4 text-red-400">Other Anime Sites</th>
+                  <th className="py-4 px-4 text-primary font-black bg-primary/5 rounded-t-xl">
+                    AnimeVerse
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5 text-xs sm:text-sm">
+                {COMPARISON_ITEMS.map((item, idx) => (
+                  <tr key={idx} className="hover:bg-white/5 transition-colors">
+                    <td className="py-4 px-4 font-semibold text-white">
+                      {item.feature}
+                    </td>
+                    <td className="py-4 px-4 text-gray-400 flex items-center gap-2">
+                      <XCircleIcon className="w-4 h-4 text-red-500 shrink-0" />
+                      <span>{item.sketchy}</span>
+                    </td>
+                    <td className="py-4 px-4 font-bold text-white bg-primary/5">
+                      <span className="flex items-center gap-2 text-emerald-400">
+                        <CheckCircleIcon className="w-4 h-4 text-primary shrink-0" />
+                        <span className="text-gray-100">{item.animeverse}</span>
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      {/* =========================================================================
+          SECTION 5: PLATFORM STATS STRIP (NEON HOLOGRAM COUNTER)
+      ========================================================================= */}
+      <section className="py-14 bg-gradient-to-r from-dark-200 via-dark-300 to-dark-200 border-y border-white/10 relative overflow-hidden">
+        {/* Glow lights */}
+        <div className="absolute top-1/2 left-1/3 -translate-y-1/2 w-80 h-32 bg-primary/20 rounded-full blur-[90px] pointer-events-none" />
+        <div className="absolute top-1/2 right-1/3 -translate-y-1/2 w-80 h-32 bg-purple-600/20 rounded-full blur-[90px] pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md">
+              <div className="text-4xl sm:text-5xl font-black text-white font-display mb-1 tracking-tight">
+                15,000+
+              </div>
+              <div className="text-xs sm:text-sm text-gray-400 font-bold uppercase tracking-wider">
+                Anime Episodes
+              </div>
+            </div>
+            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md">
+              <div className="text-4xl sm:text-5xl font-black text-primary font-display mb-1 tracking-tight shadow-primary">
+                8,000+
+              </div>
+              <div className="text-xs sm:text-sm text-gray-400 font-bold uppercase tracking-wider">
+                Manga Chapters
+              </div>
+            </div>
+            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md">
+              <div className="text-4xl sm:text-5xl font-black text-white font-display mb-1 tracking-tight">
+                1080p
+              </div>
+              <div className="text-xs sm:text-sm text-gray-400 font-bold uppercase tracking-wider">
+                Ultra HD Streams
+              </div>
+            </div>
+            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md">
+              <div className="text-4xl sm:text-5xl font-black text-secondary font-display mb-1 tracking-tight">
+                0
+              </div>
+              <div className="text-xs sm:text-sm text-gray-400 font-bold uppercase tracking-wider">
+                Disruptive Ads
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* =========================================================================
+          SECTION 6: FAQ ACCORDION (GLOW-BORDER GLASS CARDS)
+      ========================================================================= */}
+      <section className="py-24 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-14">
+          <h2 className="text-3xl sm:text-5xl font-display font-black text-white tracking-tight">
+            Frequently Asked Questions
+          </h2>
+          <p className="text-sm text-gray-400 mt-2">
+            Everything you need to know about streaming, reading, and syncing on AnimeVerse.
+          </p>
+        </div>
+
+        <div className="space-y-4">
           {FAQS.map((faq, idx) => {
             const isOpen = expandedFaq === idx;
             return (
               <div
                 key={idx}
-                className="bg-dark-200/80 border border-white/5 rounded-xl overflow-hidden transition-all"
+                className={`border rounded-2xl overflow-hidden transition-all duration-300 ${
+                  isOpen
+                    ? 'bg-dark-200/90 border-primary/50 shadow-[0_5px_30px_rgba(230,57,70,0.15)]'
+                    : 'bg-dark-200/60 border-white/10 hover:border-white/20'
+                }`}
               >
                 <button
                   type="button"
                   onClick={() => setExpandedFaq(isOpen ? null : idx)}
-                  className="w-full flex items-center justify-between p-4 sm:p-5 text-left text-sm sm:text-base font-semibold text-white hover:text-primary transition-colors cursor-pointer"
+                  className="w-full flex items-center justify-between p-5 sm:p-6 text-left text-sm sm:text-base font-bold text-white hover:text-primary transition-colors cursor-pointer"
                 >
                   <span>{faq.q}</span>
-                  <span className="p-1 rounded-md bg-dark-100 text-gray-400 shrink-0 ml-3">
+                  <span className={`p-1.5 rounded-lg shrink-0 ml-3 transition-colors ${
+                    isOpen ? 'bg-primary text-white' : 'bg-white/5 text-gray-400'
+                  }`}>
                     {isOpen ? <MinusIcon className="w-4 h-4" /> : <PlusIcon className="w-4 h-4" />}
                   </span>
                 </button>
-                {isOpen && (
-                  <div className="px-4 pb-5 sm:px-5 sm:pb-6 text-xs sm:text-sm text-gray-300 leading-relaxed border-t border-white/5 pt-3">
-                    {faq.a}
-                  </div>
-                )}
+                <AnimatePresence>
+                  {isOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="px-5 pb-6 sm:px-6 sm:pb-7 text-xs sm:text-sm text-gray-300 leading-relaxed border-t border-white/5 pt-3"
+                    >
+                      {faq.a}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             );
           })}
@@ -667,28 +1041,36 @@ const Landing = () => {
       </section>
 
       {/* =========================================================================
-          SECTION 6: FINAL CINEMATIC CALL-TO-ACTION (CTA)
+          SECTION 7: FINAL CINEMATIC CALL-TO-ACTION (MULTIVERSE PORTAL)
       ========================================================================= */}
-      <section className="py-20 relative overflow-hidden border-t border-white/10 bg-gradient-to-b from-dark-200/50 to-dark-100">
-        <div className="absolute inset-0 bg-primary/5 pointer-events-none" />
+      <section className="py-24 relative overflow-hidden border-t border-white/10 bg-gradient-to-b from-dark-200 via-dark-300 to-dark-100">
+        {/* Multiverse glowing portal rings */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-primary/20 via-purple-600/20 to-secondary/20 rounded-full blur-[140px] pointer-events-none" />
+
         <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
-          <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight">
-            Ready to Step into the Multiverse?
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest bg-white/10 border border-white/20 text-white mb-6 backdrop-blur-md">
+            <SparklesIcon className="w-4 h-4 text-primary fill-primary" />
+            <span>Enter the Multiverse</span>
+          </div>
+
+          <h2 className="text-4xl sm:text-6xl font-display font-black text-white tracking-tight leading-tight drop-shadow-xl">
+            Your Ultimate Anime Journey Begins Now
           </h2>
-          <p className="text-sm sm:text-base text-gray-300 max-w-xl mx-auto mt-4 leading-relaxed">
+          <p className="text-sm sm:text-lg text-gray-300 max-w-xl mx-auto mt-4 leading-relaxed font-medium">
             Stream your favorite series in crystal-clear 1080p, read new manga chapters, and track your watch journey for free.
           </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
             <Link
               to="/home"
-              className="px-8 py-4 bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-white rounded-xl font-bold text-base shadow-xl shadow-primary/30 hover:scale-105 active:scale-95 transition-all duration-200 inline-flex items-center gap-2"
+              className="px-9 py-4 bg-gradient-to-r from-primary via-red-600 to-secondary hover:shadow-[0_0_35px_rgba(230,57,70,0.6)] text-white rounded-xl font-black text-base shadow-2xl hover:scale-105 active:scale-95 transition-all duration-200 inline-flex items-center gap-2.5 group"
             >
               <span>Enter AnimeVerse Catalog</span>
-              <ArrowRightIcon className="w-4 h-4" />
+              <ArrowRightIcon className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link
               to="/browse"
-              className="px-6 py-4 bg-dark-200 hover:bg-dark-300 text-gray-200 hover:text-white rounded-xl font-semibold text-base border border-white/10 transition-all duration-200"
+              className="px-7 py-4 bg-white/5 hover:bg-white/15 text-gray-200 hover:text-white rounded-xl font-bold text-base border border-white/15 transition-all duration-200 backdrop-blur-sm"
             >
               Browse All Genres
             </Link>
