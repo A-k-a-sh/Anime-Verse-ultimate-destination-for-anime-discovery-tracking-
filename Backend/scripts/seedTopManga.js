@@ -62,3 +62,4 @@ const seedTopManga = async () => {
 };
 
 seedTopManga();
+
