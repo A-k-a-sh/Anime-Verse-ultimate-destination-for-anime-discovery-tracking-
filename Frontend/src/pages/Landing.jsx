@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { animeService } from '../services/animeService';
 import {
   PlayIcon,
@@ -20,7 +20,6 @@ import {
   FireIcon,
   CheckCircleIcon,
   XCircleIcon,
-  ComputerDesktopIcon,
 } from '@heroicons/react/24/solid';
 
 const SCENES = [
@@ -95,31 +94,26 @@ const COMPARISON_ITEMS = [
     feature: 'Intrusive Popups & Redirects',
     sketchy: '4–5 spam tabs per click',
     animeverse: '100% Zero spam redirects or popups',
-    status: true,
   },
   {
     feature: 'Streaming Server Redundancy',
     sketchy: 'Single server that buffers or dies',
     animeverse: 'Dual High-Speed CDN (MegaPlay + Zoko)',
-    status: true,
   },
   {
     feature: 'Manga Reading Integration',
     sketchy: 'Separate ad-ridden manga site required',
     animeverse: 'Integrated MangaDex continuous Webtoon reader',
-    status: true,
   },
   {
     feature: 'Watch Progress & Resume',
     sketchy: 'Lost on refresh or device change',
     animeverse: 'Auto-saves at 85% progress & cloud sync',
-    status: true,
   },
   {
     feature: 'Player Controls & Cinema',
     sketchy: 'Generic player with no shortcuts',
     animeverse: 'Theater Mode, Lights Off & keyboard shortcuts',
-    status: true,
   },
 ];
 
@@ -163,7 +157,49 @@ const Landing = () => {
   const activeScene = SCENES[activeSceneIndex];
   const videoRef = useRef(null);
 
-  // Auto-advance scenes every 8 seconds
+  // Section Refs for Parallax Scrolling Calculations
+  const trendingSectionRef = useRef(null);
+  const bentoSectionRef = useRef(null);
+  const compareSectionRef = useRef(null);
+  const ctaSectionRef = useRef(null);
+
+  // ==========================================
+  // PARALLAX SCROLL HOOKS
+  // ==========================================
+  // 1. Trending Section Parallax
+  const { scrollYProgress: trendingScroll } = useScroll({
+    target: trendingSectionRef,
+    offset: ['start end', 'end start'],
+  });
+  const trendingBgY = useTransform(trendingScroll, [0, 1], ['-12%', '14%']);
+  const trendingGlyphY = useTransform(trendingScroll, [0, 1], [60, -90]);
+
+  // 2. Bento Section Parallax
+  const { scrollYProgress: bentoScroll } = useScroll({
+    target: bentoSectionRef,
+    offset: ['start end', 'end start'],
+  });
+  const bentoBgY = useTransform(bentoScroll, [0, 1], ['-15%', '18%']);
+  const bentoCol1Y = useTransform(bentoScroll, [0, 1], [30, -30]);
+  const bentoCol2Y = useTransform(bentoScroll, [0, 1], [70, -70]);
+  const bentoGlyphY = useTransform(bentoScroll, [0, 1], [-80, 80]);
+
+  // 3. Comparison Section Parallax
+  const { scrollYProgress: compareScroll } = useScroll({
+    target: compareSectionRef,
+    offset: ['start end', 'end start'],
+  });
+  const compareBgY = useTransform(compareScroll, [0, 1], ['-12%', '15%']);
+
+  // 4. CTA Portal Parallax & Scale
+  const { scrollYProgress: ctaScroll } = useScroll({
+    target: ctaSectionRef,
+    offset: ['start end', 'end start'],
+  });
+  const ctaBgScale = useTransform(ctaScroll, [0, 1], [1.02, 1.18]);
+  const ctaBgY = useTransform(ctaScroll, [0, 1], ['-6%', '10%']);
+
+  // Auto-advance hero scenes every 8 seconds
   useEffect(() => {
     if (!isPlaying) return;
 
@@ -423,12 +459,36 @@ const Landing = () => {
       </section>
 
       {/* =========================================================================
-          SECTION 2: CINEMATIC NOW TRENDING SHOWCASE (MOTION CARDS & NEON GLOW)
+          SECTION 2: CINEMATIC NOW TRENDING SHOWCASE WITH PARALLAX DEEP BG
       ========================================================================= */}
-      <section className="relative py-20 border-y border-white/10 bg-gradient-to-b from-dark-100 via-dark-200/50 to-dark-100 overflow-hidden">
-        {/* Ambient Cosmic Glow Blobs in Background */}
-        <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-96 h-96 bg-primary/15 rounded-full blur-[140px] pointer-events-none" />
-        <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-96 h-96 bg-purple-600/15 rounded-full blur-[140px] pointer-events-none" />
+      <section
+        ref={trendingSectionRef}
+        className="relative py-24 border-y border-white/10 bg-dark-100 overflow-hidden"
+      >
+        {/* PARALLAX DEEP BACKGROUND IMAGE (Demon Slayer Hinokami Fire Scenery) */}
+        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none">
+          <motion.img
+            style={{ y: trendingBgY }}
+            src="/images/hero/demon-slayer.jpg"
+            alt=""
+            className="absolute -top-32 inset-x-0 w-full h-[145%] object-cover opacity-20 filter blur-[2px] brightness-110 contrast-125 mix-blend-screen"
+          />
+          {/* Deep Vignette Mask for Content Readability */}
+          <div className="absolute inset-0 bg-gradient-to-b from-dark-100 via-dark-100/75 to-dark-100" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,#0f0f23_80%)]" />
+
+          {/* Floating Parallax Japanese Glyphs (全集中 - Total Concentration) */}
+          <motion.div
+            style={{ y: trendingGlyphY }}
+            className="absolute top-12 right-12 text-7xl sm:text-9xl font-black text-amber-500/10 tracking-widest font-display select-none pointer-events-none uppercase"
+          >
+            全集中
+          </motion.div>
+        </div>
+
+        {/* Ambient Cosmic Glow Blobs */}
+        <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-96 h-96 bg-primary/20 rounded-full blur-[140px] pointer-events-none" />
+        <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-96 h-96 bg-amber-600/15 rounded-full blur-[140px] pointer-events-none" />
 
         {/* Subtle Cyberpunk Dot Mesh Grid */}
         <div className="absolute inset-0 bg-[radial-gradient(#ffffff12_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
@@ -531,13 +591,37 @@ const Landing = () => {
       </section>
 
       {/* =========================================================================
-          SECTION 3: BENTO GRID WITH LIVE UI SIMULATIONS & MOTION CARDS
+          SECTION 3: BENTO GRID WITH PARALLAX DEEP BG & MULTI-SPEED COLUMNS
       ========================================================================= */}
-      <section className="relative py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Glow backdrop */}
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-primary/5 rounded-full blur-[180px] pointer-events-none" />
+      <section
+        ref={bentoSectionRef}
+        className="relative py-28 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 overflow-hidden"
+      >
+        {/* PARALLAX DEEP BACKGROUND IMAGE (JJK Cosmic Domain Scenery) */}
+        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none">
+          <motion.img
+            style={{ y: bentoBgY }}
+            src="/images/hero/jujutsu-kaisen.jpg"
+            alt=""
+            className="absolute -top-36 inset-x-0 w-full h-[150%] object-cover opacity-20 filter blur-[2px] brightness-110 contrast-125 mix-blend-screen"
+          />
+          {/* Deep Vignette Mask */}
+          <div className="absolute inset-0 bg-gradient-to-b from-dark-100 via-dark-100/80 to-dark-100" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_10%,#0f0f23_85%)]" />
 
-        <div className="text-center max-w-2xl mx-auto mb-16">
+          {/* Floating Parallax Japanese Glyphs (領域展開 - Domain Expansion) */}
+          <motion.div
+            style={{ y: bentoGlyphY }}
+            className="absolute top-24 left-8 text-7xl sm:text-9xl font-black text-cyan-500/10 tracking-widest font-display select-none pointer-events-none uppercase"
+          >
+            領域展開
+          </motion.div>
+        </div>
+
+        {/* Ambient Radial Glows */}
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-primary/10 rounded-full blur-[180px] pointer-events-none" />
+
+        <div className="relative z-10 text-center max-w-2xl mx-auto mb-16">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black tracking-widest uppercase bg-primary/10 border border-primary/30 text-primary">
             <BoltIcon className="w-3.5 h-3.5 fill-primary" />
             <span>Architecture & Experience</span>
@@ -550,12 +634,13 @@ const Landing = () => {
           </p>
         </div>
 
-        {/* Bento Grid Layout */}
+        {/* Bento Grid Layout with Multi-Speed Parallax Columns */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 relative z-10">
           {/* ==========================================
               BENTO CARD 1: CINEMA WEB PLAYER (Span 7)
           ========================================== */}
           <motion.div
+            style={{ y: bentoCol1Y }}
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -563,7 +648,7 @@ const Landing = () => {
             className="md:col-span-7 bg-gradient-to-br from-dark-200/90 via-dark-300/80 to-dark-200/90 rounded-3xl p-6 sm:p-8 border border-white/15 relative overflow-hidden shadow-2xl flex flex-col justify-between group hover:border-primary/50 transition-all duration-300"
           >
             {/* Ambient Background Grid */}
-            <div className="absolute top-0 right-0 w-80 h-80 bg-primary/10 rounded-full blur-[100px] pointer-events-none" />
+            <div className="absolute top-0 right-0 w-80 h-80 bg-primary/15 rounded-full blur-[100px] pointer-events-none" />
 
             <div>
               <div className="flex items-center justify-between mb-4">
@@ -583,7 +668,7 @@ const Landing = () => {
             </div>
 
             {/* LIVE INTERACTIVE PLAYER MOCKUP */}
-            <div className="mt-8 bg-black/80 rounded-2xl p-4 border border-white/10 shadow-2xl">
+            <div className="mt-8 bg-black/85 rounded-2xl p-4 border border-white/10 shadow-2xl">
               {/* Player Topbar */}
               <div className="flex items-center justify-between text-xs pb-3 border-b border-white/10">
                 <div className="flex items-center gap-2">
@@ -626,7 +711,7 @@ const Landing = () => {
                 <img
                   src="/images/hero/solo-leveling.jpg"
                   alt="Player Demo"
-                  className="absolute inset-0 w-full h-full object-cover filter brightness-75"
+                  className="absolute inset-0 w-full h-full object-cover filter brightness-85"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40" />
 
@@ -677,6 +762,7 @@ const Landing = () => {
               BENTO CARD 2: MANGA SANCTUARY (Span 5)
           ========================================== */}
           <motion.div
+            style={{ y: bentoCol2Y }}
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -684,7 +770,7 @@ const Landing = () => {
             className="md:col-span-5 bg-gradient-to-br from-purple-950/40 via-dark-200/90 to-dark-300/90 rounded-3xl p-6 sm:p-8 border border-white/15 relative overflow-hidden shadow-2xl flex flex-col justify-between group hover:border-purple-500/50 transition-all duration-300"
           >
             {/* Ambient Purple Blob */}
-            <div className="absolute top-0 right-0 w-80 h-80 bg-purple-600/15 rounded-full blur-[120px] pointer-events-none" />
+            <div className="absolute top-0 right-0 w-80 h-80 bg-purple-600/20 rounded-full blur-[120px] pointer-events-none" />
 
             <div>
               <div className="flex items-center justify-between mb-4">
@@ -750,6 +836,7 @@ const Landing = () => {
               BENTO CARD 3: SMART AUTO-PROGRESS (Span 5)
           ========================================== */}
           <motion.div
+            style={{ y: bentoCol2Y }}
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -757,7 +844,7 @@ const Landing = () => {
             className="md:col-span-5 bg-gradient-to-br from-emerald-950/40 via-dark-200/90 to-dark-300/90 rounded-3xl p-6 sm:p-8 border border-white/15 relative overflow-hidden shadow-2xl flex flex-col justify-between group hover:border-emerald-500/50 transition-all duration-300"
           >
             {/* Ambient Emerald Blob */}
-            <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-600/15 rounded-full blur-[120px] pointer-events-none" />
+            <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-600/20 rounded-full blur-[120px] pointer-events-none" />
 
             <div>
               <div className="flex items-center justify-between mb-4">
@@ -817,6 +904,7 @@ const Landing = () => {
               BENTO CARD 4: ANILIST & MAL INTEL (Span 7)
           ========================================== */}
           <motion.div
+            style={{ y: bentoCol1Y }}
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -824,7 +912,7 @@ const Landing = () => {
             className="md:col-span-7 bg-gradient-to-br from-amber-950/40 via-dark-200/90 to-dark-300/90 rounded-3xl p-6 sm:p-8 border border-white/15 relative overflow-hidden shadow-2xl flex flex-col justify-between group hover:border-amber-500/50 transition-all duration-300"
           >
             {/* Ambient Amber Blob */}
-            <div className="absolute top-0 right-0 w-80 h-80 bg-amber-600/15 rounded-full blur-[120px] pointer-events-none" />
+            <div className="absolute top-0 right-0 w-80 h-80 bg-amber-600/20 rounded-full blur-[120px] pointer-events-none" />
 
             <div>
               <div className="flex items-center justify-between mb-4">
@@ -886,10 +974,26 @@ const Landing = () => {
       </section>
 
       {/* =========================================================================
-          SECTION 4: WHY ANIMEVERSE COMPARISON MATRIX (SHIMMERING TABLE)
+          SECTION 4: WHY ANIMEVERSE COMPARISON MATRIX WITH PARALLAX DEEP BG
       ========================================================================= */}
-      <section className="py-20 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-2xl mx-auto mb-14">
+      <section
+        ref={compareSectionRef}
+        className="relative py-24 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 overflow-hidden"
+      >
+        {/* PARALLAX DEEP BACKGROUND IMAGE (Bleach Twilight Scenery) */}
+        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none">
+          <motion.img
+            style={{ y: compareBgY }}
+            src="/images/hero/bleach.jpg"
+            alt=""
+            className="absolute -top-28 inset-x-0 w-full h-[145%] object-cover opacity-20 filter blur-[2px] brightness-105 contrast-125 mix-blend-luminosity"
+          />
+          {/* Deep Vignette Mask */}
+          <div className="absolute inset-0 bg-gradient-to-b from-dark-100 via-dark-100/80 to-dark-100" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_10%,#0f0f23_85%)]" />
+        </div>
+
+        <div className="relative z-10 text-center max-w-2xl mx-auto mb-14">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black tracking-widest uppercase bg-primary/10 border border-primary/30 text-primary">
             <CheckCircleIcon className="w-3.5 h-3.5" />
             <span>The Clear Difference</span>
@@ -902,7 +1006,7 @@ const Landing = () => {
           </p>
         </div>
 
-        <div className="bg-gradient-to-b from-dark-200/90 to-dark-300/90 rounded-3xl p-6 sm:p-8 border border-white/15 shadow-2xl overflow-hidden">
+        <div className="relative z-10 bg-gradient-to-b from-dark-200/90 to-dark-300/90 rounded-3xl p-6 sm:p-8 border border-white/15 shadow-2xl overflow-hidden backdrop-blur-xl">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -1041,14 +1145,30 @@ const Landing = () => {
       </section>
 
       {/* =========================================================================
-          SECTION 7: FINAL CINEMATIC CALL-TO-ACTION (MULTIVERSE PORTAL)
+          SECTION 7: FINAL CINEMATIC CALL-TO-ACTION (MULTIVERSE PORTAL WITH PARALLAX)
       ========================================================================= */}
-      <section className="py-24 relative overflow-hidden border-t border-white/10 bg-gradient-to-b from-dark-200 via-dark-300 to-dark-100">
+      <section
+        ref={ctaSectionRef}
+        className="py-28 relative overflow-hidden border-t border-white/10 bg-dark-100"
+      >
+        {/* PARALLAX DEEP BACKGROUND IMAGE (Solo Leveling Shadow Monarch Gate Scenery) */}
+        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none">
+          <motion.img
+            style={{ scale: ctaBgScale, y: ctaBgY }}
+            src="/images/hero/solo-leveling.jpg"
+            alt=""
+            className="absolute -top-28 inset-x-0 w-full h-[150%] object-cover opacity-25 filter blur-[2px] brightness-110 contrast-125 mix-blend-screen"
+          />
+          {/* Deep Portal Vignette Mask */}
+          <div className="absolute inset-0 bg-gradient-to-b from-dark-100 via-dark-100/75 to-dark-100" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,#0f0f23_85%)]" />
+        </div>
+
         {/* Multiverse glowing portal rings */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-primary/20 via-purple-600/20 to-secondary/20 rounded-full blur-[140px] pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-primary/25 via-purple-600/25 to-secondary/25 rounded-full blur-[140px] pointer-events-none" />
 
         <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest bg-white/10 border border-white/20 text-white mb-6 backdrop-blur-md">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest bg-white/10 border border-white/20 text-white mb-6 backdrop-blur-md shadow-lg">
             <SparklesIcon className="w-4 h-4 text-primary fill-primary" />
             <span>Enter the Multiverse</span>
           </div>
