@@ -174,22 +174,19 @@ const VideoPlayer = ({
     activeServer === 'server1' ? 'Server 2 (Zoko)' : 'Server 1 (MegaPlay)';
 
   const lightsClass = isLightsOff
-    ? isTheater
-      ? 'relative z-50 shadow-[0_0_80px_rgba(139,92,246,0.55)] ring-1 ring-white/20'
-      : 'fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[94vw] max-w-5xl shadow-[0_0_80px_rgba(139,92,246,0.55)] ring-1 ring-white/20'
-    : 'relative';
+    ? 'z-50 shadow-[0_0_80px_rgba(139,92,246,0.55)] ring-1 ring-white/20'
+    : '';
 
   const playerSizing = isTheater
     ? 'w-full max-h-[70vh] aspect-video max-w-[calc(70vh*16/9)] mx-auto'
     : 'w-full aspect-video';
 
   return (
-    <div className={`relative ${playerSizing}`}>
-      <div
-        ref={containerRef}
-        className={`w-full h-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl transition-all duration-300 ${lightsClass}`}
-      >
-        {/* Failover Alert Banner */}
+    <div
+      ref={containerRef}
+      className={`relative bg-black rounded-xl overflow-hidden shadow-2xl transition-all duration-300 ${playerSizing} ${lightsClass}`}
+    >
+      {/* Failover Alert Banner */}
       {hasError && (
         <div className="absolute top-0 inset-x-0 z-30 bg-red-950/90 border-b border-red-800 text-white px-4 py-2.5 flex items-center justify-between text-sm backdrop-blur-md">
           <div className="flex items-center gap-2">
@@ -242,7 +239,6 @@ const VideoPlayer = ({
           <ArrowsPointingOutIcon className="w-5 h-5" />
         )}
       </button>
-      </div>
     </div>
   );
 };
