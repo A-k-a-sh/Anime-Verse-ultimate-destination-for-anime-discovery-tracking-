@@ -22,16 +22,28 @@ const getAllAnime = async (req, res, next) => {
     
     if (genre) {
       const genres = genre.split(',');
-      query.genres = { $in: genres };
+      query.genres = { $in: genres.map(g => new RegExp(`^${g.trim()}$`, 'i')) };
     }
     
     if (year) query.year = parseInt(year);
     if (season) query.season = season.toLowerCase();
-    if (status) query.status = status;
+    if (status) {
+      const s = status.toLowerCase();
+      if (s === 'airing' || s === 'currently airing') {
+        query.status = { $in: ['Airing', 'Currently Airing'] };
+      } else if (s === 'complete' || s === 'completed' || s === 'finished airing') {
+        query.status = { $in: ['Completed', 'Finished Airing'] };
+      } else if (s === 'upcoming' || s === 'not yet aired') {
+        query.status = { $in: ['Upcoming', 'Not yet aired'] };
+      } else {
+        query.status = new RegExp(`^${status}$`, 'i');
+      }
+    }
     if (search) {
       query.$or = [
         { title: { $regex: search, $options: 'i' } },
-        { titleEnglish: { $regex: search, $options: 'i' } }
+        { titleEnglish: { $regex: search, $options: 'i' } },
+        { titleJapanese: { $regex: search, $options: 'i' } }
       ];
     }
 
@@ -39,7 +51,7 @@ const getAllAnime = async (req, res, next) => {
     let sortOption = {};
     switch (sort) {
       case 'score_desc':
-        sortOption = { score: -1 };
+        sortOption = { score: -1, scoredBy: -1 };
         break;
       case 'score_asc':
         sortOption = { score: 1 };
@@ -48,28 +60,33 @@ const getAllAnime = async (req, res, next) => {
         sortOption = { title: 1 };
         break;
       case 'year_desc':
-        sortOption = { year: -1 };
+        sortOption = { year: -1, score: -1 };
         break;
       default:
-        sortOption = { score: -1 };
+        sortOption = { score: -1, scoredBy: -1 };
     }
 
-    const skip = (page - 1) * limit;
+    const parsedPage = Math.max(parseInt(page) || 1, 1);
+    const parsedLimit = Math.min(Math.max(parseInt(limit) || 20, 1), 100);
+    const skip = (parsedPage - 1) * parsedLimit;
     const total = await Anime.countDocuments(query);
     const anime = await Anime.find(query)
       .sort(sortOption)
       .skip(skip)
-      .limit(parseInt(limit));
+      .limit(parsedLimit);
 
     res.json({
       success: true,
       data: anime,
       pagination: {
-        currentPage: parseInt(page),
-        totalPages: Math.ceil(total / limit),
+        currentPage: parsedPage,
+        totalPages: Math.ceil(total / parsedLimit) || 1,
         totalResults: total,
-        hasNextPage: page * limit < total,
-        hasPrevPage: page > 1
+        hasNextPage: parsedPage * parsedLimit < total,
+        hasPrevPage: parsedPage > 1,
+        last_visible_page: Math.ceil(total / parsedLimit) || 1,
+        current_page: parsedPage,
+        has_next_page: parsedPage * parsedLimit < total
       }
     });
   } catch (error) {
@@ -84,88 +101,128 @@ const searchAnime = async (req, res, next) => {
   try {
     const { q, page = 1, limit = 25, type, status, rating, genre, genres, order_by, sort } = req.query;
 
-    // If searching with filters or specific query, check cache first
-    if (q || status || type || genre || genres) {
-      const query = {};
-      
-      if (q) {
-        query.$or = [
-          { title: { $regex: q, $options: 'i' } },
-          { titleEnglish: { $regex: q, $options: 'i' } },
-          { titleJapanese: { $regex: q, $options: 'i' } }
-        ];
-      }
-      
-      if (status) query.status = status;
-      if (type) query.type = type;
-      if (genre || genres) {
-        const genreList = (genre || genres).split(',');
-        query.genres = { $in: genreList };
-      }
+    const parsedPage = Math.max(parseInt(page) || 1, 1);
+    const parsedLimit = Math.min(Math.max(parseInt(limit) || 25, 1), 100);
+    const skip = (parsedPage - 1) * parsedLimit;
 
-      const skip = (page - 1) * limit;
-      const results = await Anime.find(query)
-        .sort({ score: -1 })
-        .skip(skip)
-        .limit(parseInt(limit));
-      
-      const total = await Anime.countDocuments(query);
-      
-      // If we have good cache results, return them
-      if (results.length > 0) {
+    // Build MongoDB query
+    const query = {};
+
+    if (q && q.trim()) {
+      const trimmedQ = q.trim();
+      query.$or = [
+        { title: { $regex: trimmedQ, $options: 'i' } },
+        { titleEnglish: { $regex: trimmedQ, $options: 'i' } },
+        { titleJapanese: { $regex: trimmedQ, $options: 'i' } }
+      ];
+    }
+
+    if (status) {
+      const s = status.toLowerCase();
+      if (s === 'airing' || s === 'currently airing') {
+        query.status = { $in: ['Airing', 'Currently Airing'] };
+      } else if (s === 'complete' || s === 'completed' || s === 'finished airing') {
+        query.status = { $in: ['Completed', 'Finished Airing'] };
+      } else if (s === 'upcoming' || s === 'not yet aired') {
+        query.status = { $in: ['Upcoming', 'Not yet aired'] };
+      } else {
+        query.status = new RegExp(`^${status}$`, 'i');
+      }
+    }
+
+    const genreParam = genre || genres;
+    if (genreParam) {
+      const genreList = genreParam.split(',').map(g => g.trim()).filter(Boolean);
+      if (genreList.length > 0) {
+        query.genres = { $in: genreList.map(g => new RegExp(`^${g}$`, 'i')) };
+      }
+    }
+
+    if (rating) {
+      query.rating = { $regex: rating, $options: 'i' };
+    }
+
+    // Determine sort option
+    let sortOption = {};
+    const sortDirection = (sort && sort.toLowerCase() === 'asc') ? 1 : -1;
+
+    if (order_by === 'popularity') {
+      sortOption = { popularity: 1, score: -1 };
+    } else if (order_by === 'score') {
+      sortOption = { score: sortDirection, scoredBy: -1 };
+    } else if (order_by === 'title') {
+      sortOption = { title: sortDirection };
+    } else if (order_by === 'start_date' || order_by === 'year') {
+      sortOption = { 'aired.from': sortDirection, year: sortDirection, score: -1 };
+    } else {
+      sortOption = { score: -1, scoredBy: -1 };
+    }
+
+    // Query MongoDB first - always prioritize database
+    const total = await Anime.countDocuments(query);
+    const results = await Anime.find(query)
+      .sort(sortOption)
+      .skip(skip)
+      .limit(parsedLimit);
+
+    // If results found in MongoDB, return immediately (<15ms)
+    if (results.length > 0) {
+      return res.json({
+        success: true,
+        data: results,
+        pagination: {
+          last_visible_page: Math.ceil(total / parsedLimit) || 1,
+          has_next_page: (parsedPage * parsedLimit) < total,
+          current_page: parsedPage,
+          total_items: total
+        }
+      });
+    }
+
+    // Crucial Fallback: ONLY if results.length === 0 AND a specific search query 'q' was provided,
+    // query Jikan API and asynchronously cache the results into MongoDB
+    if (q && q.trim()) {
+      const filters = {
+        page: parsedPage,
+        limit: parsedLimit,
+        type,
+        status,
+        rating,
+        genre: genre || genres,
+        order_by,
+        sort
+      };
+
+      try {
+        const result = await jikanApi.searchAnime(q.trim(), filters);
         return res.json({
           success: true,
-          data: results,
-          pagination: {
-            last_visible_page: Math.ceil(total / limit),
-            has_next_page: (page * limit) < total,
-            current_page: parseInt(page)
-          }
+          data: result.data,
+          pagination: result.pagination
         });
+      } catch (apiError) {
+        console.error('Jikan API fallback error for search query:', q, apiError.message);
       }
     }
 
-    // Build filter object for Jikan API (for fresh data or cache miss)
-    const filters = {
-      page,
-      limit,
-      type,
-      status,
-      rating,
-      genre: genre || genres,
-      order_by,
-      sort
-    };
-
-    try {
-      // Fetch from Jikan API for fresh data
-      const result = await jikanApi.searchAnime(q || '', filters);
-      return res.json({
-        success: true,
-        data: result.data,
-        pagination: result.pagination
-      });
-    } catch (apiError) {
-      // If API fails, return any cached data we have
-      console.error('Jikan API error, falling back to cache:', apiError.message);
-      const cachedResults = await Anime.find({})
-        .sort({ score: -1 })
-        .limit(parseInt(limit));
-      
-      return res.json({
-        success: true,
-        data: cachedResults,
-        pagination: { last_visible_page: 1, has_next_page: false },
-        message: 'Showing cached results due to API unavailability'
-      });
-    }
-  } catch (error) {
-    console.error('Search error:', error.message);
-    res.json({
+    // If query returned 0 items from DB and no Jikan fallback needed, return empty results
+    return res.json({
       success: true,
       data: [],
-      pagination: { last_visible_page: 1, has_next_page: false },
-      message: 'Search temporarily unavailable. Please try again in a moment.'
+      pagination: {
+        last_visible_page: 1,
+        has_next_page: false,
+        current_page: parsedPage,
+        total_items: 0
+      }
+    });
+  } catch (error) {
+    console.error('Search error:', error.message);
+    res.status(500).json({
+      success: false,
+      data: [],
+      pagination: { last_visible_page: 1, has_next_page: false, current_page: 1 },
+      message: error.message || 'Error occurred while searching anime.'
     });
   }
 };
@@ -399,42 +456,35 @@ const getSeasonalAnime = async (req, res, next) => {
 const getTopAnime = async (req, res, next) => {
   try {
     const { page = 1, limit = 25, refresh } = req.query;
-    const parsedLimit = Math.min(parseInt(limit) || 25, 100);
-    
-    // Check if cache is fresh (updated in last 24 hours)
-    const cacheAge = await Anime.findOne({ score: { $gt: 0 } })
-      .sort({ lastUpdated: -1 })
-      .select('lastUpdated');
-    
-    const isCacheFresh = cacheAge && (Date.now() - cacheAge.lastUpdated < 24 * 60 * 60 * 1000);
-    
-    // Use cache if fresh and not forcing refresh
-    if (isCacheFresh && !refresh) {
-      const skip = (page - 1) * parsedLimit;
-      const cached = await Anime.find({ score: { $gt: 0 } })
-        .sort({ score: -1, scoredBy: -1 })
-        .skip(skip)
-        .limit(parsedLimit);
-      
-      const total = await Anime.countDocuments({ score: { $gt: 0 } });
-      
-      if (cached.length >= parsedLimit * 0.5) {
-        return res.json({
-          success: true,
-          data: cached,
-          pagination: {
-            last_visible_page: Math.ceil(total / parsedLimit),
-            has_next_page: (page * parsedLimit) < total,
-            current_page: parseInt(page)
-          },
-          cached: true
-        });
-      }
+    const parsedLimit = Math.min(Math.max(parseInt(limit) || 25, 1), 100);
+    const parsedPage = Math.max(parseInt(page) || 1, 1);
+    const skip = (parsedPage - 1) * parsedLimit;
+
+    // Database-First: query MongoDB cache
+    const total = await Anime.countDocuments({ score: { $gt: 0 } });
+    const cached = await Anime.find({ score: { $gt: 0 } })
+      .sort({ score: -1, scoredBy: -1 })
+      .skip(skip)
+      .limit(parsedLimit);
+
+    // If we have cached results in MongoDB and no explicit refresh requested, return immediately (<15ms)
+    if (cached.length > 0 && !refresh) {
+      return res.json({
+        success: true,
+        data: cached,
+        pagination: {
+          last_visible_page: Math.ceil(total / parsedLimit) || 1,
+          has_next_page: (parsedPage * parsedLimit) < total,
+          current_page: parsedPage,
+          total_items: total
+        },
+        cached: true
+      });
     }
-    
-    // Fetch fresh data from API if cache is stale or refresh requested
+
+    // Fetch fresh data from API if DB empty or refresh forced
     try {
-      const result = await jikanApi.getTopAnime(page, Math.min(parsedLimit, 25));
+      const result = await jikanApi.getTopAnime(parsedPage, Math.min(parsedLimit, 25));
       return res.json({
         success: true,
         data: result.data,
@@ -442,21 +492,21 @@ const getTopAnime = async (req, res, next) => {
         cached: false
       });
     } catch (apiError) {
-      // Fallback to cache if API fails
-      console.error('API error, using cache:', apiError.message);
-      const skip = (page - 1) * parsedLimit;
-      const cached = await Anime.find({ score: { $gt: 0 } })
-        .sort({ score: -1, scoredBy: -1 })
-        .skip(skip)
-        .limit(parsedLimit);
-      
-      return res.json({
-        success: true,
-        data: cached,
-        pagination: { last_visible_page: 1, has_next_page: false },
-        cached: true,
-        message: 'Showing cached results due to API unavailability'
-      });
+      console.error('API error in getTopAnime, using cache:', apiError.message);
+      if (cached.length > 0) {
+        return res.json({
+          success: true,
+          data: cached,
+          pagination: {
+            last_visible_page: Math.ceil(total / parsedLimit) || 1,
+            has_next_page: (parsedPage * parsedLimit) < total,
+            current_page: parsedPage
+          },
+          cached: true,
+          message: 'Showing cached results due to API unavailability'
+        });
+      }
+      throw apiError;
     }
   } catch (error) {
     console.error('Error fetching top anime:', error.message);
