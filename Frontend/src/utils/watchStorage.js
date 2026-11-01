@@ -12,6 +12,7 @@ const STORAGE_KEYS = {
   AUTO_SKIP: 'animeverse_auto_skip',
   THEATER_MODE: 'animeverse_theater_mode',
   EP_VIEW_MODE: 'animeverse_ep_view_mode',
+  HISTORY: 'animeverse_history_list',
 };
 
 export const watchStorage = {
@@ -245,6 +246,72 @@ export const watchStorage = {
     } catch (err) {
       console.warn('Failed to set episode view mode:', err);
     }
+  },
+
+  /**
+   * Record an anime episode to recent history for "Continue Watching"
+   * @param {{ malId: number|string, title: string, imageUrl?: string, episode: number, totalEpisodes?: number }} entry
+   */
+  recordHistory: (entry) => {
+    if (!entry || !entry.malId) return;
+    try {
+      const existing = watchStorage.getHistory();
+      const numId = Number(entry.malId);
+      const filtered = existing.filter((item) => Number(item.malId) !== numId);
+      const updated = [
+        {
+          malId: numId,
+          title: entry.title || 'Unknown Anime',
+          imageUrl: entry.imageUrl || '',
+          episode: Number(entry.episode) || 1,
+          totalEpisodes: entry.totalEpisodes || null,
+          updatedAt: Date.now(),
+        },
+        ...filtered,
+      ].slice(0, 20); // Keep last 20
+      localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(updated));
+    } catch (err) {
+      console.warn('Failed to record watch history:', err);
+    }
+  },
+
+  /**
+   * Get recent watch history for "Continue Watching"
+   * @returns {Array<{ malId: number, title: string, imageUrl: string, episode: number, totalEpisodes: number|null, updatedAt: number }>}
+   */
+  getHistory: () => {
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.HISTORY);
+      if (!data) return [];
+      const parsed = JSON.parse(data);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  },
+
+  /**
+   * Remove a single entry from history
+   * @param {number|string} malId
+   */
+  removeFromHistory: (malId) => {
+    try {
+      const list = watchStorage.getHistory();
+      const updated = list.filter((item) => Number(item.malId) !== Number(malId));
+      localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(updated));
+      return updated;
+    } catch {
+      return [];
+    }
+  },
+
+  /**
+   * Clear all history
+   */
+  clearHistory: () => {
+    try {
+      localStorage.removeItem(STORAGE_KEYS.HISTORY);
+    } catch {}
   },
 };
 

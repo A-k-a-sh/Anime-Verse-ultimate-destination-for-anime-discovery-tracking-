@@ -189,12 +189,21 @@ const Watch = () => {
     [id, isAuthenticated, anime, totalEpisodes]
   );
 
-  // Set last watched when navigating to an episode
+  // Set last watched when navigating to an episode & record to history
   useEffect(() => {
     if (id && currentEpisode) {
       watchStorage.setLastWatched(id, currentEpisode);
+      if (anime) {
+        watchStorage.recordHistory({
+          malId: id,
+          title: anime.title || anime.titleEnglish || 'Unknown Anime',
+          imageUrl: anime.imageUrl,
+          episode: currentEpisode,
+          totalEpisodes: totalEpisodes || anime.episodes,
+        });
+      }
     }
-  }, [id, currentEpisode]);
+  }, [id, currentEpisode, anime, totalEpisodes]);
 
   // Episode Selection Handler
   const handleSelectEpisode = useCallback(
