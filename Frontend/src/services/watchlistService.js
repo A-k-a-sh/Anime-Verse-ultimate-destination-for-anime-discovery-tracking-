@@ -48,4 +48,51 @@ export const watchlistService = {
       return null;
     }
   },
+
+  /**
+   * Sync watch progress to user's watchlist.
+   * Automatically creates or updates the entry with progress and status.
+   *
+   * @param {number|string} malId
+   * @param {number} episodeNumber
+   * @param {object} [animeData]
+   * @param {number} [totalEpisodes]
+   * @returns {Promise<object|null>}
+   */
+  updateProgress: async (malId, episodeNumber, animeData = null, totalEpisodes = null) => {
+    try {
+      const numMalId = parseInt(malId, 10);
+      const epNum = parseInt(episodeNumber, 10);
+      if (isNaN(numMalId) || isNaN(epNum)) return null;
+
+      const existing = await watchlistService.checkInWatchlist(numMalId);
+      const isCompleted = totalEpisodes && epNum >= totalEpisodes;
+      const targetStatus = isCompleted ? 'completed' : 'watching';
+
+      if (existing) {
+        const currentEp = existing.episodesWatched || 0;
+        const newEp = Math.max(currentEp, epNum);
+
+        const updatePayload = {
+          episodesWatched: newEp,
+          status: existing.status === 'completed' && !isCompleted ? 'completed' : targetStatus,
+        };
+
+        const result = await watchlistService.updateWatchlistItem(existing._id, updatePayload);
+        return result?.data || null;
+      } else {
+        const addPayload = {
+          malId: numMalId,
+          status: targetStatus,
+          episodesWatched: epNum,
+          isManga: false,
+        };
+        const result = await watchlistService.addToWatchlist(addPayload);
+        return result?.data || null;
+      }
+    } catch (error) {
+      console.warn('Watchlist progress sync skipped/failed:', error.message);
+      return null;
+    }
+  },
 };
