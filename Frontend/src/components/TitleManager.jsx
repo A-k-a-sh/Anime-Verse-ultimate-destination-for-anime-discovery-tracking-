@@ -37,6 +37,8 @@ const TitleManager = () => {
       document.title = STATIC_ROUTE_TITLES[path];
     } else if (path.startsWith('/watch/')) {
       document.title = 'Watch Anime • AnimeVerse';
+    } else if (path.startsWith('/read/')) {
+      document.title = 'Read Manga • AnimeVerse';
     } else if (path.startsWith('/anime/')) {
       document.title = 'Anime Details • AnimeVerse';
     } else if (path.startsWith('/manga/')) {
