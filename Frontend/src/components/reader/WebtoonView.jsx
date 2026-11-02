@@ -1,47 +1,101 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowPathIcon, ExclamationTriangleIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
 
-const WebtoonImage = ({ page, index, onVisible }) => {
-  const [src, setSrc] = useState(page.rawCdnUrl || page.proxyUrl);
+const WebtoonImage = ({ page, index }) => {
+  const [isInView, setIsInView] = useState(false);
+  const [src, setSrc] = useState(null);
   const [hasFailedOnce, setHasFailedOnce] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const [hasError, setHasError] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
-  const imgRef = useRef(null);
+  const containerRef = useRef(null);
+  const retryTimeoutRef = useRef(null);
+
+  // Lazy observation: only assign src when container is within 600px of viewport
+  useEffect(() => {
+    if (isInView) return; // Once in view, never re-observe or unload
+
+    const el = containerRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry.isIntersecting) {
+          setIsInView(true);
+          setSrc(page.rawCdnUrl || page.proxyUrl);
+          observer.disconnect();
+        }
+      },
+      {
+        rootMargin: '600px 0px 600px 0px',
+        threshold: 0.01
+      }
+    );
+
+    observer.observe(el);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [isInView, page.rawCdnUrl, page.proxyUrl]);
+
+  // Clean up retry timer on unmount
+  useEffect(() => {
+    return () => {
+      if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current);
+    };
+  }, []);
 
   const handleError = () => {
     if (!hasFailedOnce && page.proxyUrl && src !== page.proxyUrl) {
-      // Automatic fallback to backend streaming proxy on first load failure (e.g. Hotlink 403)
+      // First fallback: raw CDN failed (e.g. hotlink 403), switch to backend streaming proxy
       console.warn(`[Webtoon] Page ${page.pageNumber} raw URL failed, falling back to proxy`);
       setHasFailedOnce(true);
       setSrc(page.proxyUrl);
+      return;
+    }
+
+    // Auto-retry with backoff up to 2 times before showing error UI (for transient CDN timeouts/429s)
+    if (retryCount < 2) {
+      const delay = (retryCount + 1) * 700;
+      setRetryCount((prev) => prev + 1);
+      retryTimeoutRef.current = setTimeout(() => {
+        const baseProxy = page.proxyUrl || src;
+        const separator = baseProxy && baseProxy.includes('?') ? '&' : '?';
+        setSrc(`${baseProxy}${separator}retry=${Date.now()}`);
+      }, delay);
     } else {
       setHasError(true);
     }
   };
 
-  const handleRetry = () => {
+  const handleManualRetry = () => {
     setHasError(false);
     setIsLoaded(false);
-    setSrc(`${page.proxyUrl}&retry=${Date.now()}`);
+    setRetryCount(0);
+    const baseProxy = page.proxyUrl || page.rawCdnUrl;
+    const separator = baseProxy && baseProxy.includes('?') ? '&' : '?';
+    setSrc(`${baseProxy}${separator}retry=${Date.now()}`);
   };
 
   return (
     <div
-      ref={imgRef}
+      ref={containerRef}
       data-page-number={page.pageNumber}
-      className="relative w-full flex flex-col items-center justify-center min-h-[300px] sm:min-h-[500px]"
+      className="relative w-full flex flex-col items-center justify-center min-h-[350px] sm:min-h-[550px] my-0.5"
     >
       {/* Skeleton Loading State */}
-      {!isLoaded && !hasError && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-dark-200/40 animate-pulse text-gray-500 rounded-lg">
-          <div className="text-xs font-semibold mb-1">Page {page.pageNumber}</div>
-          <div className="w-12 h-1 bg-dark-300 rounded-full" />
+      {(!isLoaded || !isInView) && !hasError && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-dark-200/50 animate-pulse text-gray-500 rounded-lg">
+          <div className="text-xs font-semibold mb-1 text-gray-400">Page {page.pageNumber}</div>
+          <div className="w-16 h-1 bg-dark-300 rounded-full" />
         </div>
       )}
 
       {/* Error Retry State */}
       {hasError ? (
-        <div className="w-full py-16 flex flex-col items-center justify-center bg-dark-200/60 border border-white/5 rounded-xl text-center px-4">
+        <div className="w-full py-16 flex flex-col items-center justify-center bg-dark-200/60 border border-white/5 rounded-xl text-center px-4 my-2">
           <ExclamationTriangleIcon className="w-8 h-8 text-amber-500 mb-2" />
           <p className="text-sm font-semibold text-gray-300 mb-1">
             Failed to load Page {page.pageNumber}
@@ -50,7 +104,7 @@ const WebtoonImage = ({ page, index, onVisible }) => {
             The upstream image server blocked the request or timed out.
           </p>
           <button
-            onClick={handleRetry}
+            onClick={handleManualRetry}
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-dark-300 hover:bg-dark-100 text-gray-200 hover:text-white text-xs font-semibold border border-white/10 transition-colors"
           >
             <ArrowPathIcon className="w-4 h-4" />
@@ -58,19 +112,20 @@ const WebtoonImage = ({ page, index, onVisible }) => {
           </button>
         </div>
       ) : (
-        <img
-          src={src}
-          alt={`Page ${page.pageNumber}`}
-          loading="lazy"
-          onLoad={() => setIsLoaded(true)}
-          onError={handleError}
-          className={`w-full h-auto object-contain select-none transition-opacity duration-300 ${
-            isLoaded ? 'opacity-100' : 'opacity-0'
-          }`}
-          style={{
-            touchAction: 'pan-y pinch-zoom'
-          }}
-        />
+        isInView && src && (
+          <img
+            src={src}
+            alt={`Page ${page.pageNumber}`}
+            onLoad={() => setIsLoaded(true)}
+            onError={handleError}
+            className={`w-full h-auto object-contain select-none transition-opacity duration-300 ${
+              isLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
+            style={{
+              touchAction: 'pan-y pinch-zoom'
+            }}
+          />
+        )
       )}
 
       {/* Page Number Watermark Indicator */}

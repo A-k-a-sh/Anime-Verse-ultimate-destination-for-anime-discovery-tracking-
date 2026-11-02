@@ -405,6 +405,49 @@ const getChapterPages = async (req, res, next) => {
   }
 };
 
+// Concurrency Limiter Queue for upstream CDN image fetching
+class ConcurrencyLimiter {
+  constructor(concurrency = 6) {
+    this.concurrency = concurrency;
+    this.running = 0;
+    this.queue = [];
+  }
+
+  run(task, isCancelledCheck) {
+    return new Promise((resolve, reject) => {
+      this.queue.push({ task, resolve, reject, isCancelledCheck });
+      this.next();
+    });
+  }
+
+  next() {
+    if (this.running >= this.concurrency || this.queue.length === 0) {
+      return;
+    }
+
+    const { task, resolve, reject, isCancelledCheck } = this.queue.shift();
+
+    if (isCancelledCheck && isCancelledCheck()) {
+      // Client disconnected before proxy slot was allocated
+      reject(new Error('Client aborted'));
+      this.next();
+      return;
+    }
+
+    this.running++;
+
+    task()
+      .then(resolve)
+      .catch(reject)
+      .finally(() => {
+        this.running--;
+        this.next();
+      });
+  }
+}
+
+const cdnLimiter = new ConcurrencyLimiter(6);
+
 // @desc    Zero-storage streaming proxy for protected manga CDN images
 // @route   GET /api/manga/proxy-image
 // @access  Public
@@ -429,33 +472,94 @@ const proxyMangaImage = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Invalid URL format' });
     }
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    // Wrap upstream fetch & streaming in cdnLimiter (max 6 parallel upstream connections)
+    await cdnLimiter.run(
+      () =>
+        new Promise(async (resolveTask, rejectTask) => {
+          let taskDone = false;
+          const finish = (err) => {
+            if (!taskDone) {
+              taskDone = true;
+              if (err) rejectTask(err);
+              else resolveTask();
+            }
+          };
 
-    const upstreamResponse = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Referer': referer || 'https://mangapill.com/',
-        'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8'
-      }
-    });
+          // If client disconnects or completes streaming, release slot immediately
+          req.on('close', () => finish());
+          res.on('finish', () => finish());
+          res.on('error', finish);
 
-    clearTimeout(timeoutId);
+          try {
+            let upstreamResponse = null;
+            let attempts = 0;
+            const maxAttempts = 2;
 
-    if (!upstreamResponse.ok) {
-      return res.status(upstreamResponse.status).send('Upstream CDN image error');
-    }
+            while (attempts < maxAttempts) {
+              attempts++;
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), 12000);
 
-    const contentType = upstreamResponse.headers.get('content-type') || 'image/jpeg';
-    res.setHeader('Content-Type', contentType);
-    res.setHeader('Cache-Control', 'public, max-age=604800, immutable'); // 7 days browser cache
+              try {
+                upstreamResponse = await fetch(url, {
+                  signal: controller.signal,
+                  headers: {
+                    'User-Agent':
+                      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Referer': referer || 'https://mangapill.com/',
+                    'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8'
+                  }
+                });
+                clearTimeout(timeoutId);
 
-    const { Readable } = require('stream');
-    Readable.fromWeb(upstreamResponse.body).pipe(res);
+                // If upstream CDN throttled with 429 or 503, pause and retry once
+                if ((upstreamResponse.status === 429 || upstreamResponse.status === 503) && attempts < maxAttempts) {
+                  console.warn(`[ProxyLimiter] Upstream CDN returned ${upstreamResponse.status} for ${url}, retrying in 400ms...`);
+                  await new Promise((r) => setTimeout(r, 400));
+                  continue;
+                }
+
+                break;
+              } catch (fetchErr) {
+                clearTimeout(timeoutId);
+                if (attempts < maxAttempts) {
+                  await new Promise((r) => setTimeout(r, 400));
+                  continue;
+                }
+                throw fetchErr;
+              }
+            }
+
+            if (!upstreamResponse || !upstreamResponse.ok) {
+              const status = upstreamResponse ? upstreamResponse.status : 502;
+              if (!res.headersSent) {
+                res.status(status).send('Upstream CDN image error');
+              }
+              return finish();
+            }
+
+            const contentType = upstreamResponse.headers.get('content-type') || 'image/jpeg';
+            if (!res.headersSent) {
+              res.setHeader('Content-Type', contentType);
+              res.setHeader('Cache-Control', 'public, max-age=604800, immutable'); // 7 days browser cache
+            }
+
+            const { Readable } = require('stream');
+            const stream = Readable.fromWeb(upstreamResponse.body);
+            stream.pipe(res);
+          } catch (taskErr) {
+            finish(taskErr);
+          }
+        }),
+      () => req.destroyed || res.writableEnded
+    );
   } catch (error) {
+    if (error.message === 'Client aborted') {
+      return;
+    }
     if (error.name === 'AbortError') {
-      return res.status(504).send('Image fetch timed out');
+      if (!res.headersSent) res.status(504).send('Image fetch timed out');
+      return;
     }
     console.error('proxyMangaImage error:', error.message);
     if (!res.headersSent) {
