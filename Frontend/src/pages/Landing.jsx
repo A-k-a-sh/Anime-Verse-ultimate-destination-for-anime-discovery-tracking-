@@ -34,6 +34,7 @@ const SCENES = [
     poster: '/images/hero/solo-leveling.jpg',
     watchUrl: '/watch/151807/1',
     detailsUrl: '/anime/151807',
+    mangaUrl: '/manga/121496',
     badge: 'Trending Worldwide',
     accentColor: 'from-purple-400 via-fuchsia-500 to-indigo-400',
     glowColor: 'rgba(168, 85, 247, 0.45)',
@@ -50,6 +51,7 @@ const SCENES = [
     poster: '/images/hero/jujutsu-kaisen.jpg',
     watchUrl: '/watch/40748/1',
     detailsUrl: '/anime/40748',
+    mangaUrl: '/manga/113138',
     badge: 'Peak Supernatural Action',
     accentColor: 'from-blue-400 via-cyan-400 to-indigo-400',
     glowColor: 'rgba(59, 130, 246, 0.45)',
@@ -66,6 +68,7 @@ const SCENES = [
     poster: '/images/hero/demon-slayer.jpg',
     watchUrl: '/watch/38000/1',
     detailsUrl: '/anime/38000',
+    mangaUrl: '/manga/96792',
     badge: 'Award-Winning Animation',
     accentColor: 'from-amber-400 via-orange-500 to-red-500',
     glowColor: 'rgba(245, 158, 11, 0.45)',
@@ -82,6 +85,7 @@ const SCENES = [
     poster: '/images/hero/bleach.jpg',
     watchUrl: '/watch/41467/1',
     detailsUrl: '/anime/41467',
+    mangaUrl: '/manga/12',
     badge: 'Legendary Shonen Return',
     accentColor: 'from-red-500 via-rose-500 to-orange-400',
     glowColor: 'rgba(239, 68, 68, 0.45)',
@@ -378,9 +382,9 @@ const Landing = () => {
                   <span>Watch Ep 1</span>
                 </Link>
 
-                {/* Manga Sanctuary Link */}
+                {/* Manga Details Link */}
                 <Link
-                  to="/manga"
+                  to={activeScene.mangaUrl || '/manga'}
                   className="inline-flex items-center gap-2 px-5 py-4 text-gray-200 hover:text-white rounded-xl font-semibold text-sm hover:bg-white/10 backdrop-blur-sm border border-transparent hover:border-white/10 transition-all duration-200"
                 >
                   <BookOpenIcon className="w-5 h-5" />
