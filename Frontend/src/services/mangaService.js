@@ -66,6 +66,26 @@ export const mangaService = {
   getChapterPages: async (id, chapterNumber, title = null) => {
     const params = title ? { title } : {};
     const response = await api.get(`/manga/${id}/chapter/${chapterNumber}`, { params });
+
+    // Normalize proxyUrl to point directly to backend host in both dev and production
+    if (response?.data?.data?.pages && Array.isArray(response.data.data.pages)) {
+      const rawApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+      const backendBase = rawApiUrl.replace(/\/api\/?$/, '');
+      const provider = response.data.data.provider;
+
+      response.data.data.pages = response.data.data.pages.map((p) => {
+        let fullProxyUrl = p.proxyUrl;
+        if (fullProxyUrl && fullProxyUrl.startsWith('/')) {
+          fullProxyUrl = `${backendBase}${fullProxyUrl}`;
+        }
+        return {
+          ...p,
+          provider: p.provider || provider,
+          proxyUrl: fullProxyUrl
+        };
+      });
+    }
+
     return response.data;
   },
 };

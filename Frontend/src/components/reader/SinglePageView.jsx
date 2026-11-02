@@ -13,7 +13,10 @@ const SinglePageView = ({
   const currentIndex = Math.max(0, Math.min(currentPage - 1, pages.length - 1));
   const currentPageData = pages[currentIndex];
 
-  const [src, setSrc] = useState(currentPageData?.rawCdnUrl || currentPageData?.proxyUrl);
+  const needsProxy = currentPageData?.provider === 'mangapill' || (currentPageData?.rawCdnUrl && currentPageData.rawCdnUrl.includes('readdetectiveconan'));
+  const initialSrc = (needsProxy && currentPageData?.proxyUrl) ? currentPageData.proxyUrl : (currentPageData?.rawCdnUrl || currentPageData?.proxyUrl);
+
+  const [src, setSrc] = useState(initialSrc);
   const [hasFailedOnce, setHasFailedOnce] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -21,7 +24,8 @@ const SinglePageView = ({
   // Update src when page changes & reset states
   useEffect(() => {
     if (currentPageData) {
-      setSrc(currentPageData.rawCdnUrl || currentPageData.proxyUrl);
+      const pageNeedsProxy = currentPageData.provider === 'mangapill' || (currentPageData.rawCdnUrl && currentPageData.rawCdnUrl.includes('readdetectiveconan'));
+      setSrc((pageNeedsProxy && currentPageData.proxyUrl) ? currentPageData.proxyUrl : (currentPageData.rawCdnUrl || currentPageData.proxyUrl));
       setHasFailedOnce(false);
       setHasError(false);
       setIsLoaded(false);

@@ -539,14 +539,16 @@ const proxyMangaImage = async (req, res, next) => {
             }
 
             const contentType = upstreamResponse.headers.get('content-type') || 'image/jpeg';
+            const arrayBuffer = await upstreamResponse.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+
             if (!res.headersSent) {
               res.setHeader('Content-Type', contentType);
+              res.setHeader('Content-Length', buffer.length);
               res.setHeader('Cache-Control', 'public, max-age=604800, immutable'); // 7 days browser cache
+              res.send(buffer);
             }
-
-            const { Readable } = require('stream');
-            const stream = Readable.fromWeb(upstreamResponse.body);
-            stream.pipe(res);
+            finish();
           } catch (taskErr) {
             finish(taskErr);
           }

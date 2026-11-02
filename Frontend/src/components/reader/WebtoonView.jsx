@@ -23,7 +23,8 @@ const WebtoonImage = ({ page, index }) => {
         const [entry] = entries;
         if (entry.isIntersecting) {
           setIsInView(true);
-          setSrc(page.rawCdnUrl || page.proxyUrl);
+          const needsProxy = page.provider === 'mangapill' || (page.rawCdnUrl && page.rawCdnUrl.includes('readdetectiveconan'));
+          setSrc((needsProxy && page.proxyUrl) ? page.proxyUrl : (page.rawCdnUrl || page.proxyUrl));
           observer.disconnect();
         }
       },

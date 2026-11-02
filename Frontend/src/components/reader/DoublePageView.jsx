@@ -2,14 +2,18 @@ import { useState, useEffect } from 'react';
 import { ArrowPathIcon, ExclamationTriangleIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
 
 const SpreadImage = ({ page, alt, isSolo = false }) => {
-  const [src, setSrc] = useState(page?.rawCdnUrl || page?.proxyUrl);
+  const needsProxy = page?.provider === 'mangapill' || (page?.rawCdnUrl && page.rawCdnUrl.includes('readdetectiveconan'));
+  const initialSrc = (needsProxy && page?.proxyUrl) ? page.proxyUrl : (page?.rawCdnUrl || page?.proxyUrl);
+
+  const [src, setSrc] = useState(initialSrc);
   const [hasFailedOnce, setHasFailedOnce] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     if (page) {
-      setSrc(page.rawCdnUrl || page.proxyUrl);
+      const pageNeedsProxy = page.provider === 'mangapill' || (page.rawCdnUrl && page.rawCdnUrl.includes('readdetectiveconan'));
+      setSrc((pageNeedsProxy && page.proxyUrl) ? page.proxyUrl : (page.rawCdnUrl || page.proxyUrl));
       setHasFailedOnce(false);
       setHasError(false);
       setIsLoaded(false);
