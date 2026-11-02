@@ -57,8 +57,8 @@ const apiLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => {
-    // Skip rate limiting for auth routes
-    return req.path.startsWith('/api/auth/');
+    // Skip rate limiting for auth routes and proxy-image (manga chapters load 30-60 pages at once)
+    return req.path.startsWith('/api/auth/') || req.path.startsWith('/api/manga/proxy-image');
   }
 });
 

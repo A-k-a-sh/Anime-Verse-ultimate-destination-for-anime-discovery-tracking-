@@ -7,12 +7,18 @@ const {
   getMangaCharacters,
   getMangaRecommendations,
   getTopManga,
-  getRandomManga
+  getRandomManga,
+  getMangaChapters,
+  getChapterPages,
+  proxyMangaImage
 } = require('../controllers/mangaController');
 
 router.get('/search', searchManga);
 router.get('/top', getTopManga);
 router.get('/random', getRandomManga);
+router.get('/proxy-image', proxyMangaImage);
+router.get('/:id/chapters', getMangaChapters);
+router.get('/:id/chapter/:chapterNumber', getChapterPages);
 router.get('/:id/pictures', getMangaPictures);
 router.get('/:id/characters', getMangaCharacters);
 router.get('/:id/recommendations', getMangaRecommendations);

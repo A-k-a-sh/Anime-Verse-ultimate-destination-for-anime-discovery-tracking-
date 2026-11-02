@@ -1,6 +1,7 @@
 const Manga = require('../models/Manga');
 const aniListApi = require('../utils/aniListApi');
 const { resolveGenreName } = require('../utils/genreMap');
+const mangaContentService = require('../services/mangaContentService');
 
 // @desc    Search manga (Database-First with AniList fallback)
 // @route   GET /api/manga/search or GET /api/manga
@@ -358,6 +359,111 @@ const getRandomManga = async (req, res, next) => {
   }
 };
 
+// @desc    Get chapters list for a manga (Database-First Waterfall)
+// @route   GET /api/manga/:id/chapters
+// @access  Public
+const getMangaChapters = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { title } = req.query;
+
+    const chaptersData = await mangaContentService.getChapters(id, title);
+
+    res.json({
+      success: true,
+      data: chaptersData
+    });
+  } catch (error) {
+    console.error('getMangaChapters error:', error.message);
+    res.status(error.message.includes('not found') ? 404 : 500).json({
+      success: false,
+      message: error.message || 'Failed to fetch manga chapters'
+    });
+  }
+};
+
+// @desc    Get pages for a specific manga chapter (Database-First 7-day TTL Cache)
+// @route   GET /api/manga/:id/chapter/:chapterNumber
+// @access  Public
+const getChapterPages = async (req, res, next) => {
+  try {
+    const { id, chapterNumber } = req.params;
+    const { title } = req.query;
+
+    const pagesData = await mangaContentService.getChapterPages(id, chapterNumber, title);
+
+    res.json({
+      success: true,
+      data: pagesData
+    });
+  } catch (error) {
+    console.error('getChapterPages error:', error.message);
+    res.status(error.message.includes('not found') ? 404 : 500).json({
+      success: false,
+      message: error.message || 'Failed to fetch chapter pages'
+    });
+  }
+};
+
+// @desc    Zero-storage streaming proxy for protected manga CDN images
+// @route   GET /api/manga/proxy-image
+// @access  Public
+const proxyMangaImage = async (req, res, next) => {
+  try {
+    const { url, referer } = req.query;
+
+    if (!url) {
+      return res.status(400).json({
+        success: false,
+        message: 'Image URL is required'
+      });
+    }
+
+    // Security check: validate protocol
+    try {
+      const parsedUrl = new URL(url);
+      if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+        return res.status(400).json({ success: false, message: 'Invalid URL protocol' });
+      }
+    } catch {
+      return res.status(400).json({ success: false, message: 'Invalid URL format' });
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+    const upstreamResponse = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Referer': referer || 'https://mangapill.com/',
+        'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8'
+      }
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!upstreamResponse.ok) {
+      return res.status(upstreamResponse.status).send('Upstream CDN image error');
+    }
+
+    const contentType = upstreamResponse.headers.get('content-type') || 'image/jpeg';
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Cache-Control', 'public, max-age=604800, immutable'); // 7 days browser cache
+
+    const { Readable } = require('stream');
+    Readable.fromWeb(upstreamResponse.body).pipe(res);
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      return res.status(504).send('Image fetch timed out');
+    }
+    console.error('proxyMangaImage error:', error.message);
+    if (!res.headersSent) {
+      res.status(500).send('Failed to proxy manga image');
+    }
+  }
+};
+
 module.exports = {
   searchManga,
   getMangaById,
@@ -365,5 +471,8 @@ module.exports = {
   getMangaCharacters,
   getMangaRecommendations,
   getTopManga,
-  getRandomManga
+  getRandomManga,
+  getMangaChapters,
+  getChapterPages,
+  proxyMangaImage
 };
