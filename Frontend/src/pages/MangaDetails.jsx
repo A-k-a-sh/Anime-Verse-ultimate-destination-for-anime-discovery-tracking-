@@ -8,8 +8,9 @@ import CharacterCard from '../components/CharacterCard';
 import Loader from '../components/Loader';
 import AddToWatchlistModal from '../components/AddToWatchlistModal';
 import { PlusIcon, ShareIcon, ChevronDownIcon, ChevronUpIcon, CheckIcon } from '@heroicons/react/24/outline';
-import { StarIcon } from '@heroicons/react/24/solid';
+import { StarIcon, BookOpenIcon } from '@heroicons/react/24/solid';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
+import { readStorage } from '../utils/readStorage';
 
 const MangaDetails = () => {
   const { id } = useParams();
@@ -28,6 +29,8 @@ const MangaDetails = () => {
   const [showModal, setShowModal] = useState(false);
   const [showShareTooltip, setShowShareTooltip] = useState(false);
   const [watchlistEntry, setWatchlistEntry] = useState(null);
+  const [chapters, setChapters] = useState([]);
+  const [loadingChapters, setLoadingChapters] = useState(false);
 
   useEffect(() => {
     const fetchMangaDetails = async () => {
@@ -37,6 +40,13 @@ const MangaDetails = () => {
         // Fetch main manga data first
         const mangaData = await mangaService.getById(id);
         setManga(mangaData.data);
+
+        // Fetch chapters list in background
+        mangaService.getChapters(id, mangaData.data?.title).then(res => {
+          if (res?.data?.chapters) {
+            setChapters(res.data.chapters);
+          }
+        }).catch(() => {});
 
         // Helper function to add delay between requests
         const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -114,6 +124,13 @@ const MangaDetails = () => {
   const synopsis = manga.synopsis || 'No synopsis available.';
   const shouldTruncateSynopsis = synopsis.length > 300;
 
+  // Chapter Reading State
+  const lastRead = readStorage.getLastReadChapter(id);
+  const readList = readStorage.getReadChapters(id);
+  const authWatched = watchlistEntry?.episodesWatched || 0;
+  const resumeChapter = lastRead || (authWatched > 0 ? String(authWatched) : '1');
+  const hasReadAny = Boolean(lastRead || authWatched > 0 || (readList && readList.length > 0));
+
   const handleShare = async () => {
     const url = window.location.href;
     if (navigator.share) {
@@ -172,7 +189,16 @@ const MangaDetails = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
             {/* Action Buttons */}
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
+              {/* Primary Read CTA Button */}
+              <Link
+                to={`/read/${id}/${resumeChapter}`}
+                className="flex items-center gap-2 px-6 py-3 rounded-lg font-semibold bg-primary hover:bg-primary/90 text-white transition-all hover:scale-105 shadow-[0_0_20px_rgba(255,107,107,0.3)] active:scale-95"
+              >
+                <BookOpenIcon className="w-5 h-5" />
+                <span>{hasReadAny ? `Continue Ch ${resumeChapter}` : 'Read Chapter 1'}</span>
+              </Link>
+
               <button 
                 onClick={handleAddToList}
                 className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all hover:scale-105 shadow-lg ${
@@ -247,6 +273,65 @@ const MangaDetails = () => {
                 <button onClick={() => setShowFullSynopsis(!showFullSynopsis)} className="text-primary mt-3 flex items-center gap-1">
                   {showFullSynopsis ? <><span>Show Less</span><ChevronUpIcon className="w-4 h-4" /></> : <><span>Read More</span><ChevronDownIcon className="w-4 h-4" /></>}
                 </button>
+              )}
+            </div>
+
+            {/* Chapters Directory Shelf */}
+            <div className="bg-dark-200 rounded-lg p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <BookOpenIcon className="w-6 h-6 text-primary" />
+                  <h2 className="text-2xl font-bold text-white">Chapters</h2>
+                  {chapters.length > 0 && (
+                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-dark-100 text-gray-400 border border-white/5 font-semibold">
+                      {chapters.length} Available
+                    </span>
+                  )}
+                </div>
+                <Link
+                  to={`/read/${id}/${resumeChapter}`}
+                  className="text-xs text-primary hover:text-primary/80 font-semibold flex items-center gap-1"
+                >
+                  <span>Open In Reader</span>
+                  <span>→</span>
+                </Link>
+              </div>
+
+              {chapters.length === 0 ? (
+                <div className="py-6 text-center text-gray-400 text-xs">
+                  <p className="mb-3">Read instantly in our native reader.</p>
+                  <Link
+                    to={`/read/${id}/1`}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-dark-100 hover:bg-dark-300 text-primary border border-primary/20 text-xs font-semibold transition-colors"
+                  >
+                    <BookOpenIcon className="w-4 h-4" />
+                    <span>Start Reading Chapter 1</span>
+                  </Link>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 max-h-72 overflow-y-auto custom-scrollbar pr-1">
+                  {chapters.slice(0, 48).map((ch) => {
+                    const isRead = readStorage.isChapterRead(id, ch.chapter);
+                    const isCurrent = String(ch.chapter).trim() === String(resumeChapter).trim();
+
+                    return (
+                      <Link
+                        key={ch.id || ch.chapter}
+                        to={`/read/${id}/${ch.chapter}`}
+                        className={`p-2.5 rounded-lg border text-left flex items-center justify-between transition-all ${
+                          isCurrent
+                            ? 'bg-primary/20 border-primary text-white shadow-sm'
+                            : 'bg-dark-100/80 hover:bg-dark-300 border-white/5 text-gray-300 hover:text-white'
+                        }`}
+                      >
+                        <div className="truncate">
+                          <span className="text-xs font-semibold">Ch {ch.chapter}</span>
+                        </div>
+                        {isRead && <span className="text-emerald-400 text-xs font-bold" title="Read">✓</span>}
+                      </Link>
+                    );
+                  })}
+                </div>
               )}
             </div>
 

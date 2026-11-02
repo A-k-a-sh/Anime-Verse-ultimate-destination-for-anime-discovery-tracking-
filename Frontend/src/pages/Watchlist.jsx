@@ -108,7 +108,7 @@ const Watchlist = () => {
                   {activeTab === 'watching' && (
                     <div className="mb-2">
                       <div className="flex items-center justify-between text-sm text-gray-400 mb-1">
-                        <span>Progress</span>
+                        <span>Progress ({anime.isManga ? 'Chapters' : 'Episodes'})</span>
                         <span>{item.episodesWatched || 0} / {anime.episodes || '?'}</span>
                       </div>
                       <div className="w-full bg-dark-100 rounded-full h-2">
@@ -126,7 +126,26 @@ const Watchlist = () => {
                     </div>
                   )}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2">
+                  {activeTab === 'watching' && (
+                    anime.isManga ? (
+                      <Link
+                        to={`/read/${malId}/${Math.max(1, (item.episodesWatched || 0) + 1)}`}
+                        className="px-3 py-1.5 rounded-lg bg-primary hover:bg-primary/90 text-white text-xs font-semibold shadow transition-all active:scale-95 whitespace-nowrap"
+                        title="Resume reading next chapter"
+                      >
+                        Resume Ch {Math.max(1, (item.episodesWatched || 0) + 1)}
+                      </Link>
+                    ) : (
+                      <Link
+                        to={`/watch/${malId}/${Math.max(1, (item.episodesWatched || 0) + 1)}`}
+                        className="px-3 py-1.5 rounded-lg bg-primary hover:bg-primary/90 text-white text-xs font-semibold shadow transition-all active:scale-95 whitespace-nowrap"
+                        title="Resume watching next episode"
+                      >
+                        Resume Ep {Math.max(1, (item.episodesWatched || 0) + 1)}
+                      </Link>
+                    )
+                  )}
                   <button 
                     onClick={() => {
                       setEditingItem(item);
