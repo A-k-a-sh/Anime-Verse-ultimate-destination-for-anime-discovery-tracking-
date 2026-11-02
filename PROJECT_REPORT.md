@@ -68,14 +68,14 @@ AnimeVerse is a comprehensive full-stack web application that allows users to di
 
 ### Technology Stack Details
 
-#### Frontend (React + Vite)
-- **React 18.3.1** - UI component library
-- **React Router 7.0.2** - Client-side routing
-- **Vite 6.0.1** - Build tool and dev server
-- **Tailwind CSS 3.4.17** - Utility-first CSS framework
-- **Framer Motion 11.14.4** - Animation library
-- **Axios 1.7.9** - HTTP client
-- **Heroicons 2.2.0** - Icon library
+#### Frontend (React 19 + Vite 7)
+- **React 19.2.0** - Modern React UI component library with concurrent features
+- **React Router 7.9.6** - Client-side routing with split landing/home routes
+- **Vite 7.2.4** - High-performance next-generation frontend build tool (< 2.5s production bundling)
+- **Tailwind CSS 3.4.17** - Utility-first CSS framework with custom dark theme, glassmorphic blur, and neon glow presets
+- **Framer Motion 12.23.24** - Motion library for layout animations, Ken-Burns crossfades, and parallax scroll transforms
+- **Axios 1.13.2** - HTTP client with request deduplication and in-memory caching
+- **Heroicons 2.2.0** - Modern SVG iconography library
 
 #### Backend (Node.js + Express)
 - **Node.js** - JavaScript runtime
@@ -287,33 +287,38 @@ AnimeVerse is a comprehensive full-stack web application that allows users to di
 ### Page Structure (20+ Pages)
 
 #### Public Pages
-1. **Home (`/`)** - Hero section, trending anime, top picks, seasonal highlights
-2. **Browse Anime (`/browse`)** - Filterable grid with pagination
-3. **Browse Manga (`/manga`)** - Manga discovery page
-4. **Anime Details (`/anime/:id`)** - Comprehensive anime information
-5. **Watch Page (`/watch/:id/:episode?`)** - Embedded streaming video player with dual servers, theater & cinema modes, interactive episode selector, and progress sync
-6. **Manga Details (`/manga/:id`)** - Detailed manga view
-7. **Character Details (`/character/:id`)** - Character biography and appearances
-8. **Search Results (`/search`)** - Unified search for anime and manga
-9. **Random Discover (`/random`)** - Random anime/manga suggestions
-10. **Login (`/login`)** - User authentication
-11. **Register (`/register`)** - New user registration
+1. **Cinematic Landing Page (`/`)** - Multi-scene 4K Sakuga video hero showcase, live UI mockups, feature comparison matrix, and deep anime background scenery with parallax scrolling
+2. **Home Stream Catalog (`/home`)** - Dedicated streaming catalog feed, Ken-Burns crossfade Spotlight carousel, Continue Watching shelf with 1-click resume, and trending manga shelf
+3. **Browse Anime (`/browse`)** - Advanced filterable grid with the comprehensive 46-genre collapsible taxonomy
+4. **Browse Manga (`/manga`)** - Manga discovery page with 46-genre filter and 18+ adult scope toggles
+5. **Anime Details (`/anime/:id`)** - Comprehensive anime metadata, voice actors, staff, reviews, and dynamic "Watch" CTAs
+6. **Watch Page (`/watch/:id/:episode?`)** - Embedded streaming video player with dual servers, theater & cinema modes, interactive episode selector, progress sync, and 18+ adult warning notice
+7. **Manga Details (`/manga/:id`)** - Detailed manga overview, chapter/volume statistics, and author credits
+8. **Character Details (`/character/:id`)** - Character biography, high-resolution artwork gallery, and anime appearances
+9. **Search Results (`/search`)** - Unified live search for anime and manga with query-matched tab titles
+10. **Seasonal Hub (`/seasonal`)** - Seasonal archives and upcoming releases with reactive tab title updating
+11. **Random Discovery (`/random`)** - Instant randomized anime suggestions with rolling dice animations
+12. **Login (`/login`)** - User authentication
+13. **Register (`/register`)** - New user registration
 
 #### Protected Pages (Authentication Required)
-12. **Dashboard (`/dashboard`)** - User overview with stats
-13. **Watchlist (`/watchlist`)** - Personal anime/manga tracking
-14. **Profile (`/profile`)** - User settings and preferences
+14. **Dashboard (`/dashboard`)** - User overview with tracking statistics and distribution charts
+15. **Watchlist (`/watchlist`)** - Personal anime/manga tracking library with progress sync
+16. **Profile (`/profile`)** - User settings, avatar customization, and viewing history
 
 ### Component Architecture
 
-#### Reusable Components (20+ Components)
-- **Navbar** - Global navigation with search and auth state
+#### Reusable Components (25+ Components)
+- **Navbar (Option B: Floating Island Capsule)** - Floating glass pill navigation with dynamic backdrop blur (`backdrop-blur-2xl`), rich mega-card dropdowns with icons, global `⌘K` shortcut live search, dice shortcut, and authenticated user card
+- **CollapsibleGenreFilter** - Reusable 46-genre filter component with popular pills upfront, smooth expand/collapse toggle, and auto-expansion on niche genres
+- **TitleManager** - Centralized route listener that automatically synchronizes browser tab `<title>` on route navigation
 - **Footer** - Site information and links
 - **VideoPlayer** - Embedded video stream wrapper with unified postMessage router, container fullscreen sync, and failover banner
 - **ServerSwitcher** - Server 1 (MegaPlay) vs Server 2 (Zoko) selector with Sub/Dub/HSub audio tracks
 - **PlayerControls** - Prev/Next navigation, Auto-Next, Auto-Skip, Theater mode, Lights on/off, and Fullscreen toggles
 - **EpisodeSelector** - 50-episode tab pagination, Grid/List view toggle, real episode titles, search filter, and active/watched indicators
 - **CinemaOverlay** - High z-index backdrop overlay (`z-[60]`) dimming the viewport and fixed navbar for distraction-free viewing
+- **AdultStreamNotice** - Collapsible 18+ adult streaming warning banner with safe navigation toggles
 - **RelatedAnimeList** - Horizontal snap-scroll rail with chevron controls for recommendations
 - **AnimeCard** - Anime thumbnail with quick actions
 - **MangaCard** - Manga thumbnail display
@@ -326,7 +331,7 @@ AnimeVerse is a comprehensive full-stack web application that allows users to di
 - **Toast** - Success/error notifications
 - **ProtectedRoute** - Route guard for authentication
 - **ErrorBoundary** - Error handling wrapper
-- **SearchAutocomplete** - Live debounced search suggestions dropdown with poster art, score, format badges, and keyboard navigation
+- **SearchAutocomplete** - Live debounced search suggestions dropdown with poster art, score, format badges, and keyboard navigation (`⌘K` badge)
 - **FilterBar** - Content filtering controls
 
 ### State Management
@@ -351,31 +356,49 @@ AnimeVerse is a comprehensive full-stack web application that allows users to di
 }
 ```
 
-#### Local Component State (useState)
+#### Custom Hooks
+- **`useDocumentTitle(title, options)`** - Dynamically manages browser tab `<title>` across SPA routes and asynchronous data loads with brand suffixing.
+
+#### Local Component State (useState & useMemo)
 - Form inputs and validation
-- Modal visibility
-- Loading states
-- Pagination
-- Filter selections
+- Modal and dropdown visibility
+- Ken-Burns carousel slide indexing & hover pause
+- Parallax scroll transforms (`useScroll`, `useTransform`)
+- Filter selections & active genres
 
 ### Routing Strategy
 ```javascript
-// React Router v7 configuration
-<Routes>
-  {/* Public Routes */}
-  <Route path="/" element={<Home />} />
-  <Route path="/browse" element={<Browse />} />
-  <Route path="/anime/:id" element={<AnimeDetails />} />
-  <Route path="/watch/:id" element={<Watch />} />
-  <Route path="/watch/:id/:episode" element={<Watch />} />
-  
-  {/* Protected Routes */}
-  <Route path="/dashboard" element={
-    <ProtectedRoute>
-      <Dashboard />
-    </ProtectedRoute>
-  } />
-</Routes>
+// React Router v7 configuration (Split Landing & Home Architecture)
+<Router>
+  <TitleManager />
+  <div className="min-h-screen bg-dark-100 flex flex-col">
+    <Navbar />
+    <main className="flex-1 pt-20 sm:pt-24">
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/" element={<Landing />} />
+        <Route path="/home" element={<Home />} />
+        <Route path="/browse" element={<Browse />} />
+        <Route path="/anime/top" element={<TopAnime />} />
+        <Route path="/anime/:id" element={<AnimeDetails />} />
+        <Route path="/watch/:id" element={<Watch />} />
+        <Route path="/watch/:id/:episode" element={<Watch />} />
+        <Route path="/seasonal" element={<Seasonal />} />
+        <Route path="/random" element={<Random />} />
+        <Route path="/manga" element={<MangaBrowse />} />
+        <Route path="/manga/top" element={<TopManga />} />
+        <Route path="/manga/:id" element={<MangaDetails />} />
+        
+        {/* Protected Routes */}
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        } />
+      </Routes>
+    </main>
+  </div>
+</Router>
 ```
 
 ---
@@ -606,6 +629,45 @@ Desktop: 4-5 columns
 
 ---
 
+### 9. Floating Island Capsule Navbar & Command-K Search Engine
+- **Floating Island Architecture (Option B):** Detached, rounded pill capsule (`rounded-full mx-auto max-w-7xl top-3`) with dynamic frosted glassmorphism (`backdrop-blur-2xl bg-[#0B0C15]/80`). Elevation transitions add a subtle bottom ambient accent line on scroll (`border-white/15 shadow-[0_12px_40px_rgba(0,0,0,0.7)]`).
+- **Interactive Mega-Dropdown Cards:** Replaces standard text dropdowns with rich glass cards featuring icon tiles, descriptive subtitles, and badges (`[HOT]`, `[ROLL]`, `[POPULAR]`) for both Anime and Manga catalogs.
+- **Global `⌘K` / `Ctrl+K` Keyboard Hotkey:** Global event listener automatically focuses the search input when the user presses `Cmd+K` or `Ctrl+K` anywhere on the site, coupled with a keyboard shortcut badge inside the search capsule.
+- **Random Anime Dice Tool:** Dedicated 1-click randomized discovery shortcut with 45° hover rotation that routes instantly to `/random`.
+- **Authenticated VIP Profile Card:** Displays the user avatar with an emerald online status dot, username, "AnimeVerse Member" tier badge, quick library links, and styled logout action.
+
+---
+
+### 10. Multi-Scene 4K Sakuga Video Showcase & Parallax Hero (`/`)
+- **4 Curated Sakuga Video Loops:** Integrated high-bitrate video loops from iconic anime battles (*Demon Slayer*, *Jujutsu Kaisen*, *Frieren: Beyond Journey's End*, *Attack on Titan*) with instant 4K poster fallbacks.
+- **Decoupled Progress Timer:** Resolved React 19 StrictMode double-execution issues by decoupling the scene progress timer from the scene advancement trigger.
+- **Deep Anime Parallax Scenery:** Utilizes Framer Motion's `useScroll` and `useTransform` to drive multi-speed vertical depth across background anime artwork layers (`y: -80px` to `+100px`).
+- **Interactive Feature Matrix:** Comprehensive comparison table and live animated UI mockups showcasing platform streaming advantages.
+
+---
+
+### 11. Unified 46-Genre Taxonomy & Collapsible Filter System
+- **Taxonomy Standardization:** Analyzed AniList GraphQL schemas and MyAnimeList mapping structures to extract 46 canonical genres.
+- **`CollapsibleGenreFilter` Component:**
+  - Displays 12 essential popular genres upfront (*Action, Adventure, Comedy, Drama, Fantasy, Horror, Mystery, Psychological, Romance, Sci-Fi, Slice of Life, Supernatural*) to keep filter sidebars clean and compact.
+  - Smooth expansion toggle (**"Show All 46 Genres" / "Show Fewer Genres"**) with scrollable pill container.
+  - **Auto-Expansion on Niche Query:** Automatically opens the full taxonomy when a user navigates to a niche genre (e.g., `?genre=Mecha` or `?genre=Workplace`), highlighting the active pill immediately.
+  - Integrated across both **Browse Anime (`/browse`)** and **Browse Manga (`/manga`)**.
+
+---
+
+### 12. Two-Tier Dynamic Browser Title & SEO Management
+- **Native React 19 Hook (`useDocumentTitle`):** Lightweight, zero-dependency custom hook updating `document.title` on state changes with automatic ` • AnimeVerse` branding suffix.
+- **Global `TitleManager` Route Listener:** Centralized router component mounted at the root of `App.jsx` ensuring baseline titles are set instantaneously on navigation.
+- **Context-Aware Title Formatting:**
+  - Streaming Player: `Solo Leveling - Episode 12 • AnimeVerse`
+  - Top Charts: `Top Anime of All Time • AnimeVerse`
+  - Seasonal Hub: `Winter 2026 Seasonal Anime • AnimeVerse` (updates reactively when users toggle season/year dropdowns)
+  - Detail Pages: `${title} • AnimeVerse`
+  - Search Queries: `Search results for "${query}" • AnimeVerse`
+
+---
+
 ## 🎨 UI/UX Design Principles
 
 ### Design System
@@ -770,6 +832,31 @@ width: Math.min(
 **Solution:**
 - Elevated the Lights-Off overlay to `z-[60]` with a `fixed inset-0 bg-black/95 backdrop-blur-md` barrier that dims both page body and fixed navigation elements, while the active player shines prominently at `z-[70]`.
 - Calibrated Theater mode sizing to `w-full max-h-[82vh] aspect-video mx-auto`, preserving 16:9 widescreen proportions while leaving clear breathing room beneath the 64px navbar.
+
+### Challenge 10: React 19 StrictMode Timer Concurrency in Multi-Scene Showcase
+**Problem:** In React 19 development mode (StrictMode), calling state setters (`setProgress(prev => ...)` combined with `setActiveSceneIndex(...)`) inside interval callbacks executed twice per interval, causing the hero slider to alternate solely between scene 1 and scene 3 (1 → 3 → 1 → 3) and completely skipping scenes 2 and 4.  
+**Solution:**
+- Fully decoupled the timer progress from the scene index advancement.
+- The 100ms interval exclusively increments numeric progress (`0` to `100`), while a dedicated reactive `useEffect` triggers index advancement (`(prev + 1) % scenes.length`) strictly when progress reaches 100%, restoring deterministic sequential playback across all 4 curated sakuga loops.
+
+### Challenge 11: Spotlight Carousel Transition Jitter & Text Overflow in Streaming Feed
+**Problem:** In the `/home` streaming catalog feed, advancing the Spotlight carousel snapped background banners and text abruptly without crossfading. Long anime synopses (frequently exceeding 1,500 characters or containing raw HTML tags) pushed buttons and indicators off-screen.  
+**Solution:**
+- Wrapped background banners in Framer Motion's `<AnimatePresence initial={false}>` with absolute positioned `motion.div` layers, enabling a buttery-smooth 0.7s crossfade with subtle Ken-Burns scaling.
+- Wrapped slide content in `<AnimatePresence mode="wait">` for a smooth fade-in-up transition on title, badges, and action buttons.
+- Implemented `cleanSynopsis(text, 130)`: a regex-based helper that strips raw HTML/markdown tags and strictly clamps text to 130 characters with an ellipsis, paired with `line-clamp-2 max-w-xl overflow-hidden`.
+- Added hover-pause (`onMouseEnter`/`onMouseLeave`) so rotation pauses while the user is reading or clicking.
+
+### Challenge 12: Dynamic Browser Title Synchronization Across Asynchronous Player State
+**Problem:** Single-page client-side routing left the browser tab title permanently fixed at the static `index.html` string. Video player users could not distinguish which tab was playing an episode, and search or seasonal filters offered no tab context.  
+**Solution:**
+- Built a two-tier dynamic title architecture:
+  1. **`TitleManager.jsx`:** A global route listener mounted inside `<Router>` that immediately sets baseline titles on route changes.
+  2. **`useDocumentTitle(title, options)`:** A zero-dependency custom hook for asynchronous content pages, dynamically producing contextual titles:
+     - Player: `Solo Leveling - Episode 12 • AnimeVerse`
+     - Top Charts: `Top Anime of All Time • AnimeVerse`
+     - Seasonal Hub: `Winter 2026 Seasonal Anime • AnimeVerse` (updates reactively upon dropdown selection)
+     - Catalog / Search: `Action Anime • AnimeVerse` / `Search results for "naruto" • AnimeVerse`
 
 ---
 

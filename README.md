@@ -1,33 +1,37 @@
 # AnimeVerse 🎌
 
-Your ultimate destination for anime discovery, tracking, and community engagement.
+Your ultimate destination for anime discovery, streaming, tracking, and manga reading.
 
 ![AnimeVerse](./Frontend/public/Animeverse.png)
 
-## 🌟 Features
+## 🌟 Key Features
 
-- **Discover Anime & Manga**: Browse thousands of anime and manga titles with advanced filtering by genres, status, release years, formats, and adult ratings
-- **Embedded Dual-Server Video Player**: Stream anime episodes directly on site with dual-server redundancy (Server 1: MegaPlay, Server 2: ZokoAnime with custom purple theme and Auto-Skip), Sub/Dub/HSub tracks, and failover recovery
-- **Theater & Lights-Off (Cinema) Modes**: YouTube-style wide theater mode (82vh) and viewport-wide cinema dimming (`z-[60]`) with custom keyboard shortcuts (`N`, `P`, `S`, `T`, `L`, `F`, `Esc`)
-- **Interactive Episode Selector**: 50-episode range pagination, search filter, Grid vs List view toggling, and real episode title resolution (AniList & Kitsu mapping fallback)
-- **Database-First High Performance**: Instantaneous response times (< 15ms) powered by local MongoDB caching and automated write-through fallback to AniList
-- **Unified Progress Tracking & Dynamic CTAs**: Synchronized episode tracking across `localStorage` and MongoDB Watchlist, with dynamic "Watch Episode 1" / "Continue Watching Ep X" CTAs on Anime Details, Hero, and Home
-- **Personalized Recommendations**: Contextual anime and manga recommendations with smooth horizontal snap-scroll rails
-- **Top & Seasonal Airing**: Explore all-time top-rated anime, current seasonal releases, and historical seasonal archives
-- **Character & Staff Database**: In-depth character profiles with Japanese voice actors and full production staff
-- **Auto-Expanding Pagination**: Seamless infinite browsing that dynamically fetches and caches new pages from AniList when database pages are exhausted
-- **Responsive Dark UI**: Modern dark-mode user interface optimized for desktop, tablet, and mobile devices
+- **Floating Island Capsule Navbar**: Futuristic pill-shaped navigation with dynamic frosted glassmorphism (`backdrop-blur-2xl`), rich mega-card dropdowns with icons & descriptions, global `⌘K` / `Ctrl+K` keyboard shortcut live search autocomplete, quick Random Anime dice shortcut, and authenticated user profile card.
+- **Cinematic Multi-Scene Hero & Parallax Showcase (`/`)**: 4 curated 4K Sakuga video loops (Demon Slayer, Jujutsu Kaisen, Frieren, Attack on Titan) with synchronized high-visibility poster fallbacks, decoupled timer progress (React 19 StrictMode safe), live UI mockups, and deep anime background scenery with multi-speed parallax scrolling (`useScroll` / `useTransform`).
+- **Dedicated Stream Catalog Hub (`/home`)**: Split routing architecture separating the cinematic landing page from the stream catalog feed. Features smooth Ken-Burns crossfading Spotlight carousel (`AnimatePresence initial={false}`), strict synopsis truncation and HTML sanitization, interactive tabs (Airing / Trending / Top Rated), Continue Watching shelf with 1-click resume, and Trending Manga rail.
+- **Embedded Dual-Server Video Player**: Stream anime episodes directly on site with dual-server redundancy (Server 1: MegaPlay, Server 2: ZokoAnime with custom purple theme and Auto-Skip), Sub/Dub/HSub tracks, failover recovery, and collapsible 18+ adult streaming warning notice.
+- **Theater & Lights-Off (Cinema) Modes**: YouTube-style wide theater mode (82vh) and viewport-wide cinema dimming (`z-[60]`) with custom keyboard shortcuts (`N`, `P`, `S`, `T`, `L`, `F`, `Esc`).
+- **Comprehensive 46-Genre Taxonomy & Collapsible Filter**: Complete AniList & MyAnimeList unified genre taxonomy (46 canonical genres) with a clean collapsible filter component (`CollapsibleGenreFilter`), showing 12 popular genres upfront with one-click full catalog expansion and auto-expansion on niche genres across Browse Anime and Browse Manga.
+- **Two-Tier Dynamic Tab Title & SEO Management**: Custom native React 19 `useDocumentTitle` hook paired with global `TitleManager` route listener. Automatically formats browser tab titles: `${Anime} - Episode ${Ep} • AnimeVerse` (Watch), `Top Anime of All Time • AnimeVerse` (Top Charts), `${Season} ${Year} Seasonal Anime • AnimeVerse` (Seasonal Hub), catalog browse titles, and search queries.
+- **Interactive Episode Selector**: 50-episode range pagination, search filter, Grid vs List view toggling, and real episode title resolution (AniList & Kitsu mapping fallback).
+- **Database-First High Performance**: Instantaneous response times (< 15ms) powered by local MongoDB caching and automated write-through fallback to AniList.
+- **Unified Progress Tracking & Dynamic CTAs**: Synchronized episode tracking across `localStorage` and MongoDB Watchlist, with dynamic "Watch Episode 1" / "Continue Watching Ep X" CTAs on Anime Details, Hero, and Home.
+- **Personalized Recommendations**: Contextual anime and manga recommendations with smooth horizontal snap-scroll rails.
+- **Top & Seasonal Airing**: Explore all-time top-rated anime, current seasonal releases, and historical seasonal archives.
+- **Character & Staff Database**: In-depth character profiles with Japanese voice actors and full production staff.
+- **Auto-Expanding Pagination**: Seamless infinite browsing that dynamically fetches and caches new pages from AniList when database pages are exhausted.
+- **Responsive Dark UI**: Modern dark-mode user interface optimized for desktop, tablet, and mobile devices.
 
 ## 🚀 Tech Stack
 
 ### Frontend
-- **React 18** - UI component library
-- **Vite** - High-performance frontend build tool
-- **Tailwind CSS** - Modern utility-first styling
-- **Framer Motion** - Smooth transitions and layout animations
-- **Axios** - HTTP client with request deduplication and in-memory caching
-- **React Router 7** - Client-side single page application routing
-- **Heroicons** - Clean SVG iconography
+- **React 19** (`^19.2.0`) - Modern React UI component library with concurrent features
+- **Vite 7** (`^7.2.4`) - High-performance next-generation frontend build tool (< 2.5s production bundling)
+- **Tailwind CSS 3** (`^3.4.17`) - Utility-first styling with custom dark theme, glassmorphic blur, and neon glow presets
+- **Framer Motion 12** (`^12.23.24`) - Smooth layout transitions, Ken-Burns carousel crossfades, and parallax scroll transforms
+- **React Router 7** (`^7.9.6`) - Client-side single page application routing with split landing/home routes
+- **Heroicons 2** (`^2.2.0`) - Clean, modern SVG iconography
+- **Axios 1** (`^1.13.2`) - HTTP client with request deduplication and in-memory caching
 
 ### Backend
 - **Node.js & Express** - Scalable REST API framework
@@ -123,7 +127,7 @@ npm run dev
 
 ### Frontend (`/Frontend`)
 - `npm run dev` - Start Vite development server
-- `npm run build` - Build optimized production assets in `dist/`
+- `npm run build` - Build optimized production assets in `dist/` (< 2.5s)
 - `npm run preview` - Preview production build locally
 
 ## 📚 API Endpoints
@@ -138,7 +142,7 @@ npm run dev
 - `GET /api/anime` - Paginated anime catalog with filters (genre, status, rating, sort)
 - `GET /api/anime/search` - Advanced search and multi-filter browse with AniList auto-fallback
 - `GET /api/anime/top` - Get all-time top-rated anime
-- `GET /api/anime/seasonal/:year/:season` - Seasonal anime releases (e.g. `2024/fall`)
+- `GET /api/anime/seasonal/:year/:season` - Seasonal anime releases (e.g. `2026/winter`)
 - `GET /api/anime/:id` - Full anime details (characters, voice actors, staff, recommendations)
 - `GET /api/anime/:id/characters` - Anime character roster with Japanese voice actors
 - `GET /api/anime/:id/recommendations` - Contextual recommendations (genre-matched fallback)
