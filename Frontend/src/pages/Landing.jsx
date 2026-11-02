@@ -271,7 +271,7 @@ const Landing = () => {
   };
 
   return (
-    <div className="min-h-screen bg-dark-100 text-white overflow-x-hidden selection:bg-primary selection:text-white">
+    <div className="min-h-screen bg-dark-100 text-white overflow-x-hidden selection:bg-primary selection:text-white -mt-20 sm:-mt-24">
       {/* =========================================================================
           HERO SECTION: MULTI-SCENE CINEMATIC SHOWCASE (HIGH VISIBILITY VIDEO)
       ========================================================================= */}

@@ -39,7 +39,7 @@ function App() {
         <Router>
           <div className="min-h-screen bg-dark-100 flex flex-col">
             <Navbar />
-            <main className="flex-1 pt-16">
+            <main className="flex-1 pt-20 sm:pt-24">
               <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<Landing />} />

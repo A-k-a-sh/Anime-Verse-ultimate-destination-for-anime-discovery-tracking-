@@ -23,6 +23,19 @@ const SearchAutocomplete = ({ isMobile = false, onSelect }) => {
   const debounceTimerRef = useRef(null);
   const navigate = useNavigate();
 
+  // Global Cmd+K / Ctrl+K shortcut listener
+  useEffect(() => {
+    const handleGlobalKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, []);
+
   // Debounced search query
   useEffect(() => {
     const trimmed = query.trim();
@@ -162,35 +175,39 @@ const SearchAutocomplete = ({ isMobile = false, onSelect }) => {
           }}
           onKeyDown={handleKeyDown}
           placeholder="Search anime by title, genre..."
-          className={`w-full bg-dark-300/60 border border-dark-400 rounded-full px-4 py-2 pl-10 pr-9 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 ${
+          className={`w-full bg-white/[0.07] hover:bg-white/[0.1] border border-white/10 hover:border-white/20 focus:border-primary/60 focus:bg-dark-100/90 rounded-full px-3.5 py-1.5 pl-9 pr-14 text-xs text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200 ${
             isOpen ? 'rounded-b-none border-b-0' : ''
           }`}
         />
-        <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
 
-        {/* Clear / Spinner Icon */}
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
+        {/* Clear / Spinner Icon / Kbd Shortcut Badge */}
+        <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
           {loading ? (
-            <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <div className="w-3.5 h-3.5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           ) : query ? (
             <button
               type="button"
               onClick={handleClear}
               className="text-gray-400 hover:text-white transition-colors"
             >
-              <XMarkIcon className="w-4 h-4" />
+              <XMarkIcon className="w-3.5 h-3.5" />
             </button>
-          ) : null}
+          ) : (
+            <kbd className="hidden lg:inline-flex items-center text-[10px] font-mono text-gray-400/80 bg-white/5 px-1.5 py-0.5 rounded border border-white/10 pointer-events-none">
+              ⌘K
+            </kbd>
+          )}
         </div>
       </form>
 
       {/* Floating Suggestions Dropdown */}
       {isOpen && (
         <div
-          className={`absolute left-0 right-0 z-50 bg-dark-200/95 backdrop-blur-md border border-white/10 shadow-2xl overflow-hidden transition-all duration-200 ${
+          className={`absolute left-0 right-0 z-50 bg-[#0B0C15]/95 backdrop-blur-2xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.85)] overflow-hidden transition-all duration-200 ${
             isMobile
-              ? 'top-full rounded-b-xl max-h-[70vh]'
-              : 'top-full rounded-b-xl max-h-[480px]'
+              ? 'top-full rounded-2xl mt-1.5 max-h-[70vh]'
+              : 'top-full rounded-2xl mt-1.5 max-h-[480px]'
           }`}
         >
           {results.length > 0 ? (
