@@ -5,6 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import TitleManager from './components/TitleManager';
+import ScrollToTop from './components/ScrollToTop';
 
 // Pages
 import Landing from './pages/Landing';
@@ -119,6 +120,7 @@ function App() {
     <ErrorBoundary>
       <AuthProvider>
         <Router>
+          <ScrollToTop />
           <TitleManager />
           <AppLayout />
         </Router>
