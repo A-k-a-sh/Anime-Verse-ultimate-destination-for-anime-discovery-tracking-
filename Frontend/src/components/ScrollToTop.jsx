@@ -2,18 +2,18 @@ import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
 /**
- * Automatically scrolls the browser window to the top (0, 0)
+ * Automatically scrolls the browser window to the top (0, 0) smoothly
  * whenever the route or search query changes.
  */
 const ScrollToTop = () => {
   const { pathname, search } = useLocation();
 
   useEffect(() => {
-    // Instantly scroll to top of document on route navigation
+    // Smoothly scroll to top of document on route navigation
     window.scrollTo({
       top: 0,
       left: 0,
-      behavior: 'instant',
+      behavior: 'smooth',
     });
   }, [pathname, search]);
 
@@ -21,3 +21,4 @@ const ScrollToTop = () => {
 };
 
 export default ScrollToTop;
+
