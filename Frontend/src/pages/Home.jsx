@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { animeService } from '../services/animeService';
 import { mangaService } from '../services/mangaService';
 import { watchStorage } from '../utils/watchStorage';
+import { readStorage } from '../utils/readStorage';
 import {
   PlayIcon,
   StarIcon,
@@ -63,14 +64,19 @@ const Home = () => {
 
   // Continue Watching State (Local Storage)
   const [continueWatchingList, setContinueWatchingList] = useState([]);
+  // Continue Reading State (Local Storage)
+  const [continueReadingList, setContinueReadingList] = useState([]);
 
   // Active Tab for Discovery Shelf
   const [activeTab, setActiveTab] = useState('airing'); // 'airing' | 'trending' | 'top'
 
-  // Fetch Watch History on Mount
+  // Fetch Watch & Read History on Mount
   useEffect(() => {
     const history = watchStorage.getHistory();
     setContinueWatchingList(history);
+
+    const mangaHistory = readStorage.getHistory();
+    setContinueReadingList(mangaHistory);
   }, []);
 
   const handleRemoveHistory = (e, malId) => {
@@ -83,6 +89,18 @@ const Home = () => {
   const handleClearHistory = () => {
     watchStorage.clearHistory();
     setContinueWatchingList([]);
+  };
+
+  const handleRemoveReadHistory = (e, malId) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const updated = readStorage.removeFromHistory(malId);
+    setContinueReadingList(updated);
+  };
+
+  const handleClearReadHistory = () => {
+    readStorage.clearHistory();
+    setContinueReadingList([]);
   };
 
   // Fetch Anime Data (Cached)
@@ -641,6 +659,84 @@ const Home = () => {
             ))}
           </div>
         </section>
+
+        {/* =========================================================================
+            4.5 CONTINUE READING SHELF (Local Storage Reading History)
+        ========================================================================= */}
+        {continueReadingList.length > 0 && (
+          <section className="bg-gradient-to-r from-dark-200/80 via-dark-200/50 to-dark-100 rounded-2xl p-5 sm:p-6 border border-purple-500/20 shadow-xl">
+            <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/5">
+              <div className="flex items-center gap-2">
+                <span className="p-1.5 rounded-lg bg-purple-500/20 text-purple-400">
+                  <BookOpenIcon className="w-5 h-5" />
+                </span>
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-bold text-white">Continue Reading</h2>
+                  <p className="text-xs text-gray-400">Jump right back into your chapters</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleClearReadHistory}
+                className="text-xs text-gray-400 hover:text-red-400 transition-colors cursor-pointer"
+              >
+                Clear History
+              </button>
+            </div>
+
+            <div className="flex gap-4 overflow-x-auto pb-2 custom-scrollbar">
+              {continueReadingList.map((item) => (
+                <div
+                  key={item.malId}
+                  className="group relative w-40 sm:w-48 shrink-0 bg-dark-100 rounded-xl overflow-hidden border border-white/10 hover:border-purple-500/50 transition-all duration-300 shadow-lg flex flex-col justify-between"
+                >
+                  <Link to={`/read/${item.malId}/${item.chapter}`} className="block relative aspect-[2/3] overflow-hidden bg-dark-300">
+                    <img
+                      src={item.imageUrl || 'https://via.placeholder.com/200x300?text=No+Cover'}
+                      alt={item.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center shadow-lg">
+                        <BookOpenIcon className="w-5 h-5" />
+                      </div>
+                    </div>
+
+                    <div className="absolute bottom-2 left-2 bg-black/80 backdrop-blur-sm px-2 py-0.5 rounded text-[11px] font-bold text-white border border-white/10">
+                      Ch {item.chapter}{item.totalChapters ? ` / ${item.totalChapters}` : ''}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={(e) => handleRemoveReadHistory(e, item.malId)}
+                      className="absolute top-2 right-2 p-1 rounded-full bg-black/70 hover:bg-red-500 text-white transition-colors cursor-pointer"
+                      title="Remove from history"
+                    >
+                      <XMarkIcon className="w-3.5 h-3.5" />
+                    </button>
+                  </Link>
+
+                  <div className="p-3">
+                    <Link
+                      to={`/read/${item.malId}/${item.chapter}`}
+                      className="text-xs font-bold text-white truncate block hover:text-purple-400 transition-colors"
+                      title={item.title}
+                    >
+                      {item.title}
+                    </Link>
+                    <Link
+                      to={`/read/${item.malId}/${item.chapter}`}
+                      className="inline-flex items-center gap-1 mt-2 text-[11px] font-semibold text-purple-400 hover:text-purple-300 transition-colors"
+                    >
+                      <span>Resume Ch {item.chapter}</span>
+                      <ArrowRightIcon className="w-3 h-3" />
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* =========================================================================
             5. TRENDING MANGA & WEBTOONS SHELF (Bridges Anime & Manga into Home)

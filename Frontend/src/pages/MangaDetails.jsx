@@ -11,6 +11,7 @@ import { PlusIcon, ShareIcon, ChevronDownIcon, ChevronUpIcon, CheckIcon } from '
 import { StarIcon, BookOpenIcon } from '@heroicons/react/24/solid';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { readStorage } from '../utils/readStorage';
+import MangaChapterSelector from '../components/MangaChapterSelector';
 
 const MangaDetails = () => {
   const { id } = useParams();
@@ -277,63 +278,14 @@ const MangaDetails = () => {
             </div>
 
             {/* Chapters Directory Shelf */}
-            <div className="bg-dark-200 rounded-lg p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <BookOpenIcon className="w-6 h-6 text-primary" />
-                  <h2 className="text-2xl font-bold text-white">Chapters</h2>
-                  {chapters.length > 0 && (
-                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-dark-100 text-gray-400 border border-white/5 font-semibold">
-                      {chapters.length} Available
-                    </span>
-                  )}
-                </div>
-                <Link
-                  to={`/read/${id}/${resumeChapter}`}
-                  className="text-xs text-primary hover:text-primary/80 font-semibold flex items-center gap-1"
-                >
-                  <span>Open In Reader</span>
-                  <span>→</span>
-                </Link>
-              </div>
-
-              {chapters.length === 0 ? (
-                <div className="py-6 text-center text-gray-400 text-xs">
-                  <p className="mb-3">Read instantly in our native reader.</p>
-                  <Link
-                    to={`/read/${id}/1`}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-dark-100 hover:bg-dark-300 text-primary border border-primary/20 text-xs font-semibold transition-colors"
-                  >
-                    <BookOpenIcon className="w-4 h-4" />
-                    <span>Start Reading Chapter 1</span>
-                  </Link>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 max-h-72 overflow-y-auto custom-scrollbar pr-1">
-                  {chapters.slice(0, 48).map((ch) => {
-                    const isRead = readStorage.isChapterRead(id, ch.chapter);
-                    const isCurrent = String(ch.chapter).trim() === String(resumeChapter).trim();
-
-                    return (
-                      <Link
-                        key={ch.id || ch.chapter}
-                        to={`/read/${id}/${ch.chapter}`}
-                        className={`p-2.5 rounded-lg border text-left flex items-center justify-between transition-all ${
-                          isCurrent
-                            ? 'bg-primary/20 border-primary text-white shadow-sm'
-                            : 'bg-dark-100/80 hover:bg-dark-300 border-white/5 text-gray-300 hover:text-white'
-                        }`}
-                      >
-                        <div className="truncate">
-                          <span className="text-xs font-semibold">Ch {ch.chapter}</span>
-                        </div>
-                        {isRead && <span className="text-emerald-400 text-xs font-bold" title="Read">✓</span>}
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+            <MangaChapterSelector
+              mangaId={id}
+              mangaTitle={manga.title}
+              mangaImage={imageUrl}
+              chapters={chapters}
+              resumeChapter={resumeChapter}
+              loading={loadingChapters}
+            />
 
             {/* Pictures */}
             {pictures.length > 0 && (

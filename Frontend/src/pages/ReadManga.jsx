@@ -116,13 +116,60 @@ const ReadManga = () => {
     loadChapterData();
   }, [loadChapterData]);
 
-  // 4. Progress Tracking Sync (Guest + Authenticated)
+  // 4. Immediately track visited chapter (Local Storage + Reading History + Remote Watchlist)
+  useEffect(() => {
+    if (!id || !chapter) return;
+
+    // Immediately record last read chapter in local storage
+    readStorage.setLastReadChapter(id, chapter);
+
+    // Record to recent reading history
+    if (manga) {
+      readStorage.recordHistory({
+        malId: id,
+        title: manga.title || manga.titleEnglish || 'Unknown Manga',
+        imageUrl: manga.imageUrl,
+        chapter: chapter,
+        totalChapters: chaptersList.length || manga.chapters || null,
+      });
+    }
+
+    // Immediately sync with authenticated user's Watchlist
+    if (isAuthenticated) {
+      const totalChapters = chaptersList.length || manga?.chapters || null;
+      watchlistService.updateMangaProgress(id, chapter, manga, totalChapters);
+    }
+  }, [id, chapter, manga, chaptersList.length, isAuthenticated]);
+
+  // 5. Sync remote Watchlist read history on mount for authenticated users
+  useEffect(() => {
+    if (!id || !isAuthenticated) return;
+
+    const syncRemoteWatchlist = async () => {
+      try {
+        const entry = await watchlistService.checkInWatchlist(id);
+        if (entry && entry.episodesWatched > 0) {
+          const remoteList = [];
+          for (let i = 1; i <= entry.episodesWatched; i++) {
+            remoteList.push(String(i));
+          }
+          setReadChapters((prev) => Array.from(new Set([...prev, ...remoteList])));
+        }
+      } catch (err) {
+        console.warn('[ReadManga] Remote watchlist sync skipped:', err.message);
+      }
+    };
+
+    syncRemoteWatchlist();
+  }, [id, isAuthenticated]);
+
+  // 6. Progress Tracking Sync when finishing chapter (>= 85% of pages viewed)
   const syncProgress = useCallback(
     (pageNumber) => {
       if (!id || !chapter || !chapterPayload) return;
       const totalPages = chapterPayload.totalPages || chapterPayload.pages?.length || 1;
 
-      // Mark as read if user viewed at least 85% of pages or reached final page
+      // Mark chapter as read with checkmark when user views at least 85% of pages or reaches the end
       if (pageNumber >= Math.floor(totalPages * 0.85) || pageNumber >= totalPages) {
         const updated = readStorage.markChapterRead(id, chapter);
         setReadChapters(updated);
@@ -137,7 +184,7 @@ const ReadManga = () => {
     [id, chapter, chapterPayload, chaptersList.length, manga, isAuthenticated]
   );
 
-  // 5. HUD Controls Auto-Hide Behavior
+  // 7. HUD Controls Auto-Hide Behavior
   const resetHideTimer = useCallback(() => {
     setIsControlsVisible(true);
     if (hideTimerRef.current) clearTimeout(hideTimerRef.current);

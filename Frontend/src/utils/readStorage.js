@@ -141,5 +141,73 @@ export const readStorage = {
       console.warn('Failed to save reader settings:', err);
       return { ...DEFAULT_SETTINGS };
     }
+  },
+
+  /**
+   * Record a manga chapter to recent history for "Continue Reading"
+   * @param {{ malId: number|string, title: string, imageUrl?: string, chapter: number|string, totalChapters?: number }} entry
+   */
+  recordHistory: (entry) => {
+    if (!entry || !entry.malId) return;
+    try {
+      const existing = readStorage.getHistory();
+      const numId = Number(entry.malId);
+      const filtered = existing.filter((item) => Number(item.malId) !== numId);
+      const updated = [
+        {
+          malId: numId,
+          title: entry.title || 'Unknown Manga',
+          imageUrl: entry.imageUrl || '',
+          chapter: String(entry.chapter || '1'),
+          totalChapters: entry.totalChapters || null,
+          updatedAt: Date.now(),
+        },
+        ...filtered,
+      ].slice(0, 25);
+      localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(updated));
+    } catch (err) {
+      console.warn('Failed to record manga read history:', err);
+    }
+  },
+
+  /**
+   * Get recent reading history
+   * @returns {Array<{ malId: number, title: string, imageUrl: string, chapter: string, totalChapters: number|null, updatedAt: number }>}
+   */
+  getHistory: () => {
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.HISTORY);
+      if (!data) return [];
+      const parsed = JSON.parse(data);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  },
+
+  /**
+   * Remove a single manga entry from reading history
+   * @param {number|string} malId
+   */
+  removeFromHistory: (malId) => {
+    try {
+      const list = readStorage.getHistory();
+      const updated = list.filter((item) => Number(item.malId) !== Number(malId));
+      localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(updated));
+      return updated;
+    } catch {
+      return [];
+    }
+  },
+
+  /**
+   * Clear all reading history
+   */
+  clearHistory: () => {
+    try {
+      localStorage.removeItem(STORAGE_KEYS.HISTORY);
+    } catch (err) {
+      console.warn('Failed to clear read history:', err);
+    }
   }
 };
