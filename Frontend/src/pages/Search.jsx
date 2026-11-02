@@ -4,10 +4,14 @@ import { animeService } from '../services/animeService';
 import { mangaService } from '../services/mangaService';
 import AnimeGrid from '../components/AnimeGrid';
 import Loader from '../components/Loader';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 const Search = () => {
   const [searchParams] = useSearchParams();
   const query = searchParams.get('q') || '';
+
+  // Dynamic Browser Tab Title
+  useDocumentTitle(query ? `Search results for "${query}"` : 'Search Anime & Manga');
   const [activeTab, setActiveTab] = useState('anime');
   const [animeResults, setAnimeResults] = useState([]);
   const [mangaResults, setMangaResults] = useState([]);

@@ -4,6 +4,7 @@ import { mangaService } from '../services/mangaService';
 import AnimeGrid from '../components/AnimeGrid';
 import CollapsibleGenreFilter from '../components/CollapsibleGenreFilter';
 import { FunnelIcon } from '@heroicons/react/24/outline';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 const MangaBrowse = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -20,6 +21,12 @@ const MangaBrowse = () => {
     order_by: searchParams.get('sort') || 'popularity',
     genre: searchParams.get('genre') || '',
   });
+
+  // Dynamic Browser Tab Title based on active genre or filters
+  const mangaBrowseTitle = filters.genre
+    ? `${filters.genre} Manga`
+    : 'Browse Manga & Webtoons';
+  useDocumentTitle(mangaBrowseTitle);
 
   useEffect(() => {
     fetchManga();

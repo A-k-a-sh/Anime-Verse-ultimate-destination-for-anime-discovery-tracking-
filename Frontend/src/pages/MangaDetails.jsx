@@ -9,12 +9,17 @@ import Loader from '../components/Loader';
 import AddToWatchlistModal from '../components/AddToWatchlistModal';
 import { PlusIcon, ShareIcon, ChevronDownIcon, ChevronUpIcon, CheckIcon } from '@heroicons/react/24/outline';
 import { StarIcon } from '@heroicons/react/24/solid';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 const MangaDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated, loading: authLoading } = useAuth();
   const [manga, setManga] = useState(null);
+
+  // Dynamic Browser Tab Title
+  const mangaTitle = manga?.title || manga?.titleEnglish || '';
+  useDocumentTitle(mangaTitle || 'Manga Details');
   const [characters, setCharacters] = useState([]);
   const [pictures, setPictures] = useState([]);
   const [recommendations, setRecommendations] = useState([]);

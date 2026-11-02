@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { animeService } from '../services/animeService';
 import AnimeGrid from '../components/AnimeGrid';
 import Loader from '../components/Loader';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 const TopAnime = () => {
+  useDocumentTitle('Top Anime of All Time');
   const [anime, setAnime] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);

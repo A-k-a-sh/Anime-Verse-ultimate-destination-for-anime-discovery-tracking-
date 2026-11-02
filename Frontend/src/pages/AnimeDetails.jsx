@@ -13,6 +13,7 @@ import Loader from '../components/Loader';
 import AddToWatchlistModal from '../components/AddToWatchlistModal';
 import { PlusIcon, ShareIcon, ChevronDownIcon, ChevronUpIcon, CheckIcon } from '@heroicons/react/24/outline';
 import { PlayIcon } from '@heroicons/react/24/solid';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 const AnimeDetails = () => {
   const { id } = useParams();
@@ -20,6 +21,10 @@ const AnimeDetails = () => {
   const location = useLocation();
   const { isAuthenticated, loading: authLoading } = useAuth();
   const [anime, setAnime] = useState(null);
+
+  // Dynamic Browser Tab Title
+  const animeTitle = anime?.title || anime?.titleEnglish || '';
+  useDocumentTitle(animeTitle || 'Anime Details');
   const [characters, setCharacters] = useState([]);
   const [staff, setStaff] = useState([]);
   const [pictures, setPictures] = useState([]);

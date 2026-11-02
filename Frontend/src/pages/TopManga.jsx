@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { mangaService } from '../services/mangaService';
 import AnimeGrid from '../components/AnimeGrid';
 import Loader from '../components/Loader';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 const TopManga = () => {
+  useDocumentTitle('Top Manga of All Time');
   const [manga, setManga] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);

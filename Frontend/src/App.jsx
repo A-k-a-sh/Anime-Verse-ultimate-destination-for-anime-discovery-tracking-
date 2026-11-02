@@ -4,6 +4,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import TitleManager from './components/TitleManager';
 
 // Pages (will be created)
 import Landing from './pages/Landing';
@@ -37,6 +38,7 @@ function App() {
     <ErrorBoundary>
       <AuthProvider>
         <Router>
+          <TitleManager />
           <div className="min-h-screen bg-dark-100 flex flex-col">
             <Navbar />
             <main className="flex-1 pt-20 sm:pt-24">

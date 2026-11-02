@@ -2,12 +2,17 @@ import { useState, useEffect } from 'react';
 import { animeService } from '../services/animeService';
 import AnimeGrid from '../components/AnimeGrid';
 import Loader from '../components/Loader';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 const Seasonal = () => {
   const [anime, setAnime] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedSeason, setSelectedSeason] = useState(getCurrentSeason());
+
+  // Dynamic Browser Tab Title according to selected season & year
+  const seasonName = (selectedSeason || '').charAt(0).toUpperCase() + (selectedSeason || '').slice(1);
+  useDocumentTitle(`${seasonName} ${selectedYear} Seasonal Anime`);
 
   const seasons = ['winter', 'spring', 'summer', 'fall'];
   const years = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i);

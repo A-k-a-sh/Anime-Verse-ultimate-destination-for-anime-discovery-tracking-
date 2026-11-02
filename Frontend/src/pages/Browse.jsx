@@ -4,6 +4,7 @@ import { animeService } from '../services/animeService';
 import AnimeGrid from '../components/AnimeGrid';
 import CollapsibleGenreFilter from '../components/CollapsibleGenreFilter';
 import { FunnelIcon } from '@heroicons/react/24/outline';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 const Browse = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -21,6 +22,14 @@ const Browse = () => {
     order_by: searchParams.get('sort') || 'popularity',
     genre: searchParams.get('genre') || '',
   });
+
+  // Dynamic Browser Tab Title based on active genre or filters
+  const browseTitle = filters.genre
+    ? `${filters.genre} Anime`
+    : filters.status === 'airing'
+    ? 'Airing Anime'
+    : 'Browse Anime Catalog';
+  useDocumentTitle(browseTitle);
 
   useEffect(() => {
     fetchAnime();

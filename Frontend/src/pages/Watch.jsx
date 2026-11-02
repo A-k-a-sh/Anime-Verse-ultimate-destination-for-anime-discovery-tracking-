@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { animeService } from '../services/animeService';
 import { watchlistService } from '../services/watchlistService';
 import { watchStorage } from '../utils/watchStorage';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 // Watch Sub-components
 import VideoPlayer from '../components/watch/VideoPlayer';
@@ -72,6 +73,10 @@ const Watch = () => {
   }, [episodeList, currentEpisode]);
 
   const currentEpisodeTitle = currentEpisodeInfo?.title || currentEpisodeInfo?.fullTitle || '';
+
+  // Dynamic Browser Tab Title
+  const animeTitle = anime?.title || anime?.titleEnglish || '';
+  useDocumentTitle(animeTitle ? `${animeTitle} - Episode ${currentEpisode}` : 'Watch Anime');
 
   // Initial redirect if no episode param provided in URL
   useEffect(() => {

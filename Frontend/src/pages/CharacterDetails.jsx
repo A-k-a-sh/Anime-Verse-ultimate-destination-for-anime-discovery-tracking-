@@ -4,10 +4,15 @@ import { characterService } from '../services/characterService';
 import ImageGallery from '../components/ImageGallery';
 import AnimeCard from '../components/AnimeCard';
 import Loader from '../components/Loader';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 const CharacterDetails = () => {
   const { id } = useParams();
   const [character, setCharacter] = useState(null);
+
+  // Dynamic Browser Tab Title
+  const charName = character?.name || '';
+  useDocumentTitle(charName || 'Character Profile');
   const [pictures, setPictures] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showFullBio, setShowFullBio] = useState(false);
