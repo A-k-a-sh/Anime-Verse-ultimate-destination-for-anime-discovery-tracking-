@@ -54,4 +54,18 @@ export const mangaService = {
     const response = await api.get('/manga/random');
     return response.data;
   },
+
+  // Get manga chapters list
+  getChapters: async (id, title = null) => {
+    const params = title ? { title } : {};
+    const response = await api.get(`/manga/${id}/chapters`, { params });
+    return response.data;
+  },
+
+  // Get chapter pages and navigation
+  getChapterPages: async (id, chapterNumber, title = null) => {
+    const params = title ? { title } : {};
+    const response = await api.get(`/manga/${id}/chapter/${chapterNumber}`, { params });
+    return response.data;
+  },
 };
