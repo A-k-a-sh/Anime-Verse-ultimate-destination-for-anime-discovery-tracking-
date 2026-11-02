@@ -9,6 +9,9 @@ Your ultimate destination for anime discovery, streaming, tracking, and manga re
 - **Floating Island Capsule Navbar**: Futuristic pill-shaped navigation with dynamic frosted glassmorphism (`backdrop-blur-2xl`), rich mega-card dropdowns with icons & descriptions, global `⌘K` / `Ctrl+K` keyboard shortcut live search autocomplete, quick Random Anime dice shortcut, and authenticated user profile card.
 - **Cinematic Multi-Scene Hero & Parallax Showcase (`/`)**: 4 curated 4K Sakuga video loops (Demon Slayer, Jujutsu Kaisen, Frieren, Attack on Titan) with synchronized high-visibility poster fallbacks, decoupled timer progress (React 19 StrictMode safe), live UI mockups, and deep anime background scenery with multi-speed parallax scrolling (`useScroll` / `useTransform`).
 - **Dedicated Stream Catalog Hub (`/home`)**: Split routing architecture separating the cinematic landing page from the stream catalog feed. Features smooth Ken-Burns crossfading Spotlight carousel (`AnimatePresence initial={false}`), strict synopsis truncation and HTML sanitization, interactive tabs (Airing / Trending / Top Rated), Continue Watching shelf with 1-click resume, and Trending Manga rail.
+- **Native In-Platform Manga Reader (`/read/:id/:chapter`)**: Distraction-free, ad-free reader with 3 viewing modes: **Webtoon (Continuous Vertical Strip)**, **Single Page Flip**, and authentic **Double Page Spread (Japanese RTL tankōbon)**. Includes auto-hiding top & bottom HUDs, an interactive page scrubber slider, full keyboard shortcuts (`←`/`→`, `[`/`]`, `F`, `M`, `Esc`), reading direction switcher, canvas themes (Pure Black, Dark Gray, Sepia), and image fit options (Fit Width, Fit Height, Original).
+- **Multi-Source Manga Content Engine & Zero-Storage Proxy**: High-resilience waterfall sourcing (MangaDex official REST API $\rightarrow$ MangaPill Scraper fallback $\rightarrow$ zero-storage Express streaming proxy). Injects required `Referer` headers to bypass third-party CDN hotlink protection with 0 bytes saved on disk/DB and a 7-day browser cache. Features a 15-slot backend concurrency queue and frontend viewport lazy-loading (`IntersectionObserver`) with auto-retry to prevent upstream CDN rate limits on rapid scrolling.
+- **Interactive Manga Chapter Selector & Deliberate Tracking**: 50-chapter range pagination tabs (`1-50`, `51-100`, etc.), real-time chapter search across all chapters, sort toggle (`1 → Latest` / `Latest → 1`), read status checkmark badges `✓`, dynamic "Read Chapter 1" / "Continue Reading Ch X" CTAs, "Resume Ch X" Watchlist buttons, and a "Continue Reading" shelf on the home feed. Strictly adheres to deliberate user choice (exploring chapters updates reading history without auto-adding to Watchlist).
 - **Embedded Dual-Server Video Player**: Stream anime episodes directly on site with dual-server redundancy (Server 1: MegaPlay, Server 2: ZokoAnime with custom purple theme and Auto-Skip), Sub/Dub/HSub tracks, failover recovery, and collapsible 18+ adult streaming warning notice.
 - **Theater & Lights-Off (Cinema) Modes**: YouTube-style wide theater mode (82vh) and viewport-wide cinema dimming (`z-[60]`) with custom keyboard shortcuts (`N`, `P`, `S`, `T`, `L`, `F`, `Esc`).
 - **Comprehensive 46-Genre Taxonomy & Collapsible Filter**: Complete AniList & MyAnimeList unified genre taxonomy (46 canonical genres) with a clean collapsible filter component (`CollapsibleGenreFilter`), showing 12 popular genres upfront with one-click full catalog expansion and auto-expansion on niche genres across Browse Anime and Browse Manga.
@@ -47,6 +50,8 @@ Your ultimate destination for anime discovery, streaming, tracking, and manga re
 - **Server 1: MegaPlay (`megaplay.buzz`)** - High-speed default video stream provider with Sub/Dub audio tracks
 - **Server 2: ZokoAnime (`zokoanime.video`)** - Multi-server video stream provider with Auto-Skip intro/outro, Sub/Dub/HSub tracks, and custom purple accent skin
 - **Kitsu API (`kitsu.io`)** - Secondary episode mapping provider ensuring complete episode lists and titles for long-running series
+- **MangaDex REST API (`api.mangadex.org`)** - Primary manga chapter and page metadata provider with distributed MangaDex@Home CDN direct delivery
+- **MangaPill Scraper (`mangapill.com`)** - Secondary fallback content scraper ensuring comprehensive coverage on licensed Shonen Jump & mainstream manga titles
 
 ## 📦 Installation
 
@@ -155,6 +160,9 @@ npm run dev
 - `GET /api/manga/:id` - Full manga details, chapters, volumes, and authors
 - `GET /api/manga/:id/characters` - Characters appearing in manga
 - `GET /api/manga/:id/recommendations` - Related manga recommendations
+- `GET /api/manga/:id/chapters` - Multi-source chapter index with 24h MongoDB caching
+- `GET /api/manga/:id/chapter/:chapterNumber` - Chapter pages and prev/next metadata with 7-day TTL caching
+- `GET /api/manga/proxy-image` - Zero-storage streaming proxy for protected manga CDN images (rate-exempt)
 
 ### Characters
 - `GET /api/characters/:id` - Detailed character profile with about summary and anime appearances
@@ -171,6 +179,8 @@ npm run dev
 
 - **Database-First Caching Engine**: Over 90% of requests served directly from indexed MongoDB collections in < 15ms.
 - **Stale-While-Revalidate (SWR)**: High-speed local cache return paired with background revalidation.
+- **Zero-Storage Manga Streaming Proxy**: Bypasses third-party hotlink protection on demand via Node.js stream piping (`Readable.fromWeb().pipe(res)`), saving 0 bytes to server disk/DB with 7-day browser caching.
+- **Viewport-Only Lazy Loading & Concurrency Queue**: Front-end `IntersectionObserver` with a 600px buffer and a 15-slot backend concurrency queue prevents upstream CDN 429 burst rate limits during rapid scrolling.
 - **Auto-Expanding Pagination**: Clean, infinite load-more flow that queries AniList on database exhaustion and persists new records automatically.
 - **JWT Authentication with Security Cookies**: Protected user state with bcrypt salted hashing.
 - **Enterprise Middleware**: Helmet HTTP security headers, CORS origin protection, and Express Rate Limiting.

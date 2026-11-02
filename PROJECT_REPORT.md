@@ -87,11 +87,17 @@ AnimeVerse is a comprehensive full-stack web application that allows users to di
 - **cors 2.8.5** - Cross-origin resource sharing
 - **express-rate-limit 7.5.0** - Rate limiting middleware
 
-#### External APIs
+#### External APIs & Providers
 - **AniList GraphQL API v2** - Modern, official GraphQL API for Anime, Manga, and Characters
   - Endpoint: https://graphql.anilist.co
   - Rate Limit: 90 requests/minute
   - Capability: Single-request nested relational fetching (details + cast + staff + relations in 1 call)
+- **MangaDex REST API** - Official manga scanlation & metadata provider
+  - Endpoint: https://api.mangadex.org
+  - Delivery: MangaDex@Home distributed image CDN
+- **MangaPill Scraper** - High-resilience fallback content provider
+  - Coverage: Comprehensive chapter indexes and image strips for licensed Shonen Jump & mainstream manga
+- **Kitsu API** - Episode title mapping provider (`kitsu.io/api/edge/mappings`)
 
 #### Development Tools
 - **Nodemon 3.1.11** - Auto-restart development server
@@ -217,11 +223,53 @@ AnimeVerse is a comprehensive full-stack web application that allows users to di
 // Compound unique index: { userId: 1, malId: 1 }
 ```
 
+### 6. MangaChapterIndex Schema (`mangachapterindexes`)
+```javascript
+{
+  malId: Number (required, unique, indexed),
+  provider: String ('mangadex' | 'mangapill', default: 'mangadex'),
+  totalChapters: Number (default: 0),
+  chapters: [
+    {
+      id: String (required),
+      chapter: String (required),
+      title: String,
+      volume: String,
+      date: Date
+    }
+  ],
+  lastUpdated: Date (default: Date.now, 24-hour cache invalidation)
+}
+// Unique index: { malId: 1 }
+```
+
+### 7. MangaChapterPages Schema (`mangachapterpages`)
+```javascript
+{
+  mangaId: Number (required, indexed),
+  chapter: String (required, indexed),
+  totalPages: Number (default: 0),
+  provider: String ('mangadex' | 'mangapill', default: 'mangadex'),
+  pages: [
+    {
+      pageNumber: Number (required),
+      rawCdnUrl: String (required),
+      proxyUrl: String
+    }
+  ],
+  createdAt: Date (default: Date.now, TTL index: 604800s - 7 days)
+}
+// Compound index: { mangaId: 1, chapter: 1 }
+// TTL auto-expiry index: { createdAt: 1 }, expireAfterSeconds: 604800
+```
+
 ### Indexing Strategy
-- **malId**: Indexed in all cache collections for fast lookups
+- **malId**: Indexed in all cache collections (`Anime`, `Manga`, `MangaChapterIndex`) for fast lookups (< 15ms)
 - **userId + malId**: Compound unique index in Watchlist for data integrity
+- **mangaId + chapter**: Compound index in `MangaChapterPages` for instant page retrieval
+- **createdAt (TTL)**: MongoDB auto-expiring index (7-day time-to-live) in `MangaChapterPages` for zero-maintenance cache cleanup
 - **status**: Indexed in Watchlist for efficient filtering
-- **lastUpdated**: Used for cache invalidation logic
+- **lastUpdated**: Used for 24-hour revalidation in `MangaChapterIndex`
 
 ---
 
@@ -263,6 +311,9 @@ AnimeVerse is a comprehensive full-stack web application that allows users to di
 | GET | `/:id/characters` | Get characters | No |
 | GET | `/:id/pictures` | Get pictures | No |
 | GET | `/:id/recommendations` | Get recommendations | No |
+| GET | `/:id/chapters` | Get multi-source chapter list (24h cache) | No |
+| GET | `/:id/chapter/:chapterNumber` | Get chapter pages & navigation (7d TTL cache) | No |
+| GET | `/proxy-image?url=...` | Zero-storage streaming proxy for protected CDN images | No |
 
 ### Watchlist Routes (`/api/watchlist`)
 | Method | Endpoint | Description | Auth Required |
@@ -668,6 +719,55 @@ Desktop: 4-5 columns
 
 ---
 
+### 13. Native In-Platform Manga Reader & Multi-Source Content Engine (`/read/:id/:chapter`)
+
+**Objective:** Deliver a distraction-free, ad-free in-platform manga reading experience with zero invasive third-party popups, iframes, or redirections.  
+**Solution:** Multi-tier waterfall acquisition engine (MangaDex API $\rightarrow$ MangaPill Scraper fallback $\rightarrow$ Zero-Storage Streaming Proxy), three specialized layout reading modes (Webtoon vertical scroll, Single Page flip, and authentic Japanese Double Page spread), auto-hiding HUDs, and strict deliberate-choice reading synchronization.
+
+#### Multi-Source Waterfall Content Acquisition Engine
+1. **Tier 1: MangaDex Official REST API (`api.mangadex.org`):**
+   - High-speed catalog search mapping MyAnimeList IDs to MangaDex UUIDs.
+   - Retrieves English scanlation chapters and resolves high-quality images via the distributed MangaDex@Home CDN (`/at-home/server/{chapterId}`).
+   - Direct client browser loading without backend proxy overhead.
+2. **Tier 2: MangaPill Scraper Fallback (`mangapill.com`):**
+   - Seamlessly activates when MangaDex returns 0 English chapters or restricts licensed Shonen Jump & mainstream titles (*Naruto*, *One Piece*, *Jujutsu Kaisen*, *Chainsaw Man*, *Solo Leveling*).
+   - High-resilience HTML parsing extracts complete chapter lists and image strip URLs (`data-src`).
+3. **Tier 3: Zero-Storage Streaming Proxy (`/api/manga/proxy-image`):**
+   - Third-party manga CDNs (e.g. `cdn.readdetectiveconan.com`) enforce hotlink blocking, returning `HTTP 403 Forbidden` to external client origins.
+   - Node.js streaming proxy injects required `Referer: https://mangapill.com/` and user-agent headers, piping image binary streams directly (`Readable.fromWeb().pipe(res)`) with 0 bytes written to server disk or database.
+   - Injects `Cache-Control: public, max-age=604800, immutable` for 7-day browser caching.
+
+#### Three Dedicated Reading Modes
+- **Webtoon Mode (Continuous Long Strip):**
+  - Seamless vertical infinite scrolling optimized for webtoons and manhwa.
+  - Viewport-only lazy loading with `IntersectionObserver` (600px buffer) loads visible artwork dynamically while keeping skipped pages dormant to eliminate network storms.
+  - Native touch actions (`touch-action: pan-y pinch-zoom`) support smooth mobile pinch-to-zoom without jarring horizontal scroll jitter.
+- **Single Page Flip Mode:**
+  - Distraction-free book mode displaying one full page centered on screen with fit toggles (Fit Width, Fit Height, Original).
+  - Preloads the next 2 upcoming pages in memory (`new Image().src`) for instantaneous zero-latency page flips.
+  - Screen tap navigation zones: Left zone (next in RTL / prev in LTR), Center zone (toggle HUD), and Right zone.
+- **Double Page Spread Mode (Authentic Japanese RTL Tankōbon):**
+  - Displays two pages side-by-side in authentic Right-to-Left Japanese reading order (`[Page 3 | Page 2]`).
+  - Automatically isolates cover pages and odd single final pages in centered solo layout.
+
+#### Distraction-Free HUD & Customization Suite
+- **Auto-Hiding Floating HUDs:** Top header and bottom footer with backdrop glassmorphism (`backdrop-blur-xl bg-dark-200/90`) disappear after 3 seconds of inactivity or scroll down, reappearing on hover, tap, or scroll up.
+- **Interactive Scrubber Slider:** Real-time range scrubber reflecting the current visible page number and allowing instant scrub jumps.
+- **Side Chapter Drawer:** Slide-over navigation panel with 50-chapter range tabs (`1-50`, `51-100`, etc.), real-time chapter search, and read status checkmark badges `✓`.
+- **Reader Settings Modal:**
+  - Mode Switcher: Webtoon / Single Page / Double Page
+  - Reading Direction: Right-to-Left (RTL, default) / Left-to-Right (LTR)
+  - Canvas Theme: Pure Black (`#000000`), Dark Gray (`#121212`), Warm Sepia (`#1f1b16`)
+  - Width Constraint: 100%, 1200px, 900px, 700px
+- **Comprehensive Keyboard Hotkeys:** `←`/`A` (Prev Page), `→`/`D` (Next Page), `[` (Prev Chapter), `]` (Next Chapter), `F` (Toggle Fullscreen), `M` (Cycle Reading Modes), `Esc` (Close Drawers/HUDs).
+
+#### Deliberate-Choice Reading Progress Synchronization
+- **Dual-Layer Tracking:** Local guest progress persisted in `readStorage.js` (`localStorage`); authenticated accounts synchronize `episodesWatched` in MongoDB Watchlist.
+- **Deliberate Choice Invariant:** Reading an exploratory chapter updates reading history and bookmarks but NEVER auto-creates a watchlist document with status `watching` unless the user deliberately clicked "Add to List".
+- **Cross-Site CTAs:** Contextual "Read Chapter 1" / "Continue Reading Ch X" on `MangaDetails.jsx`, "Resume Ch X" buttons in `Watchlist.jsx`, and a "Continue Reading" shelf on the home feed.
+
+---
+
 ## 🎨 UI/UX Design Principles
 
 ### Design System
@@ -858,6 +958,30 @@ width: Math.min(
      - Seasonal Hub: `Winter 2026 Seasonal Anime • AnimeVerse` (updates reactively upon dropdown selection)
      - Catalog / Search: `Action Anime • AnimeVerse` / `Search results for "naruto" • AnimeVerse`
 
+### Challenge 13: Manga Hotlink Protection & Zero-Storage Streaming Proxy (HTTP 403 Forbidden)
+**Problem:** Third-party manga content CDNs (e.g., `cdn.readdetectiveconan.com`) strictly enforce origin and referrer hotlink protection, returning `HTTP 403 Forbidden` when requested directly by frontend client browsers on `localhost:5173` or production domains.  
+**Solution:**
+- Implemented a high-speed, zero-storage Node.js streaming proxy endpoint (`GET /api/manga/proxy-image?url=...&referer=...`).
+- Directly streams incoming chunks from the upstream CDN to the client using native stream piping (`Readable.fromWeb(upstreamResponse.body).pipe(res)`), guaranteeing 0 bytes are stored on disk or MongoDB.
+- Injects required upstream headers (`Referer: https://mangapill.com/` and browser `User-Agent`).
+- Sets `Cache-Control: public, max-age=604800, immutable` so browsers cache pages for 7 days without repeat network trips.
+- Configured Express `apiLimiter` to exempt `/api/manga/proxy-image` so chapters with 50+ images never trigger client rate-limit blocks.
+
+### Challenge 14: Fast-Scrolling Upstream CDN Burst Throttling (HTTP 429 & Connection Resets)
+**Problem:** In Webtoon long-strip reading mode, rapid scrolling from Page 1 down to Page 20 triggered browsers to initiate 40–60 simultaneous image fetches within 50ms. The upstream CDN's anti-DDoS firewall detected this sudden connection storm from the server IP, temporarily returning `HTTP 429 Too Many Requests` or closing TCP sockets ("Failed to load page: upstream server blocked or timed out").  
+**Solution:**
+- Engineered a two-tier client + server throttling architecture:
+  1. **Frontend Viewport Lazy-Loading (`WebtoonView.jsx`):** Employs an `IntersectionObserver` with a controlled 600px lookahead buffer. Skipped intermediate pages remain dormant skeletons with fixed container min-height, preventing layout jumps while completely suppressing premature network calls. When a user scrolls back up, the observer triggers and seamlessly loads the visible pages.
+  2. **Backend Concurrency Limiter Queue (`ConcurrencyLimiter` in `mangaController.js`):** Restricts active upstream connections to a pool of 15 parallel streams (~150 images/sec). If a client navigates away or disconnects, queued tasks are cancelled immediately before dispatching upstream requests.
+  3. **Automatic Retry Backoff:** Handles transient upstream 429 or 503 responses on the backend with an automatic 400ms retry backoff, coupled with frontend exponential backoff before displaying the manual retry button.
+
+### Challenge 15: Deliberate User Choice Invariant for Watchlist & Reading Progress
+**Problem:** When a logged-in user explored a manga chapter, the previous progress tracking logic automatically added the manga to their MongoDB Watchlist with status `watching`, altering library state without explicit user consent.  
+**Solution:**
+- Enforced a strict deliberate-choice design rule across `updateMangaProgress` and `watchlistService.js`.
+- If a title does not already exist in the user's Watchlist, the server updates local reading history (`readStorage.js`) and chapter bookmarks without creating an unwanted database document.
+- Only when the user deliberately clicks "Add to List" does the manga enter their personal library, preserving user trust and data integrity.
+
 ---
 
 ## 📊 Performance Metrics
@@ -1027,7 +1151,7 @@ VITE_API_URL=http://localhost:3000/api
 
 ### Phase 3 - Content Expansion
 - [x] Dual-Server Embedded Video Streaming Player (MegaPlay & ZokoAnime with custom player, theater mode, cinema mode, and episode selector)
-- [ ] Manga reader integration
+- [x] Native In-Platform Manga Reader (Multi-source waterfall with MangaDex & MangaPill fallback, zero-storage streaming proxy, Webtoon/Single/Double reading modes, and deliberate choice tracking)
 - [ ] News and articles section
 - [ ] Forum/community discussions
 - [ ] User-generated lists (top 10s, thematic)
@@ -1092,6 +1216,7 @@ VITE_API_URL=http://localhost:3000/api
 - [MongoDB Manual](https://docs.mongodb.com/)
 - [Tailwind CSS Docs](https://tailwindcss.com/docs)
 - [AniList GraphQL API Docs](https://anilist.gitbook.io/anilist-apiv2-docs/)
+- [MangaDex API Documentation](https://api.mangadex.org/docs/)
 
 ### Learning Resources
 - MDN Web Docs (JavaScript, HTML, CSS)
