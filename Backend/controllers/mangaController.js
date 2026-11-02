@@ -407,7 +407,7 @@ const getChapterPages = async (req, res, next) => {
 
 // Concurrency Limiter Queue for upstream CDN image fetching
 class ConcurrencyLimiter {
-  constructor(concurrency = 6) {
+  constructor(concurrency = 15) {
     this.concurrency = concurrency;
     this.running = 0;
     this.queue = [];
