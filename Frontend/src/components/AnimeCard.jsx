@@ -14,6 +14,20 @@ const AnimeCard = ({ anime, index = 0, type = 'anime' }) => {
     setImageLoaded(true);
   };
 
+  // Determine media type: prioritize explicit prop, or infer from item metadata
+  const isManga =
+    type === 'manga' ||
+    anime.type === 'Manga' ||
+    anime.type === 'Manhwa' ||
+    anime.type === 'Manhua' ||
+    anime.type === 'Novel' ||
+    anime.type === 'One-shot' ||
+    anime.chapters !== undefined ||
+    anime.volumes !== undefined ||
+    (Array.isArray(anime.authors) && anime.authors.length > 0);
+
+  const mediaType = isManga ? 'manga' : (type || 'anime');
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -21,7 +35,7 @@ const AnimeCard = ({ anime, index = 0, type = 'anime' }) => {
       transition={{ duration: 0.3, delay: index * 0.05 }}
       className="group relative bg-dark-200 rounded-xl overflow-hidden hover:shadow-glow-md transition-all duration-300 transform hover:scale-105"
     >
-      <Link to={`/${type}/${anime.malId || anime.mal_id}`}>
+      <Link to={`/${mediaType}/${anime.malId || anime.mal_id}`}>
         {/* Image Container */}
         <div className="relative aspect-[2/3] overflow-hidden bg-dark-100">
           {/* Skeleton loader */}
@@ -83,9 +97,11 @@ const AnimeCard = ({ anime, index = 0, type = 'anime' }) => {
           </h3>
           
           <div className="flex items-center justify-between text-xs text-gray-400">
-            <span>{anime.type || 'TV'}</span>
+            <span>{anime.type || (isManga ? 'Manga' : 'TV')}</span>
             <span>
-              {anime.episodes ? `${anime.episodes} eps` : anime.year || 'N/A'}
+              {isManga
+                ? anime.chapters ? `${anime.chapters} chs` : (anime.volumes ? `${anime.volumes} vols` : 'Manga')
+                : anime.episodes ? `${anime.episodes} eps` : anime.year || 'N/A'}
             </span>
           </div>
 
@@ -115,7 +131,7 @@ const AnimeCard = ({ anime, index = 0, type = 'anime' }) => {
         isOpen={showModal}
         onClose={() => setShowModal(false)}
         onSuccess={() => setShowModal(false)}
-        isManga={type === 'manga'}
+        isManga={isManga}
       />
     </motion.div>
   );

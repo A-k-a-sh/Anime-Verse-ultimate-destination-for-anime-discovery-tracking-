@@ -92,10 +92,19 @@ const SearchAutocomplete = ({ isMobile = false, onSelect }) => {
     (anime) => {
       const targetId = anime.malId || anime.mal_id || anime.id;
       if (!targetId) return;
+      const isManga =
+        anime.type === 'Manga' ||
+        anime.type === 'Manhwa' ||
+        anime.type === 'Manhua' ||
+        anime.type === 'Novel' ||
+        anime.type === 'One-shot' ||
+        anime.chapters !== undefined ||
+        anime.volumes !== undefined ||
+        (Array.isArray(anime.authors) && anime.authors.length > 0);
       setIsOpen(false);
       setQuery('');
       onSelect?.();
-      navigate(`/anime/${targetId}`);
+      navigate(`/${isManga ? 'manga' : 'anime'}/${targetId}`);
     },
     [navigate, onSelect]
   );

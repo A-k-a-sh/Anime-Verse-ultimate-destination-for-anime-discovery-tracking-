@@ -482,7 +482,7 @@ const Landing = () => {
             style={{ y: trendingBgY }}
             src="/images/hero/demon-slayer.jpg"
             alt=""
-            className="absolute -top-32 inset-x-0 w-full h-[145%] object-cover opacity-20 filter blur-[2px] brightness-110 contrast-125 mix-blend-screen"
+            className="absolute -top-32 inset-x-0 w-full h-[145%] object-cover opacity-80 filter blur-[2px] brightness-110 contrast-125 mix-blend-screen"
           />
           {/* Deep Vignette Mask for Content Readability */}
           <div className="absolute inset-0 bg-gradient-to-b from-dark-100 via-dark-100/75 to-dark-100" />
@@ -614,7 +614,7 @@ const Landing = () => {
             style={{ y: bentoBgY }}
             src="/images/hero/jujutsu-kaisen.jpg"
             alt=""
-            className="absolute -top-36 inset-x-0 w-full h-[150%] object-cover opacity-20 filter blur-[2px] brightness-110 contrast-125 mix-blend-screen"
+            className="absolute -top-36 inset-x-0 w-full h-[150%] object-cover opacity-90 filter blur-[2px] brightness-110 contrast-125 mix-blend-screen"
           />
           {/* Deep Vignette Mask */}
           <div className="absolute inset-0 bg-gradient-to-b from-dark-100 via-dark-100/80 to-dark-100" />
