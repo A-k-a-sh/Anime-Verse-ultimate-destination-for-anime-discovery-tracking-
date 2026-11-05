@@ -11,6 +11,7 @@ import Carousel from '../components/Carousel';
 import AnimeCard from '../components/AnimeCard';
 import Loader from '../components/Loader';
 import AddToWatchlistModal from '../components/AddToWatchlistModal';
+import RelatedPulsesSection from '../components/pulse/RelatedPulsesSection';
 import { PlusIcon, ShareIcon, ChevronDownIcon, ChevronUpIcon, CheckIcon } from '@heroicons/react/24/outline';
 import { PlayIcon } from '@heroicons/react/24/solid';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
@@ -552,6 +553,14 @@ const AnimeDetails = () => {
                 <p className="text-gray-400 text-center py-8">No reviews available at the moment.</p>
               )}
             </section>
+
+            {/* Otaku Pulse Community Theories & Reviews */}
+            <RelatedPulsesSection
+              mediaId={anime.malId}
+              mediaType="anime"
+              mediaTitle={anime.titleEnglish || anime.title}
+              mediaImage={anime.imageUrl}
+            />
 
             {/* Recommendations Section */}
             <section className="bg-dark-200 rounded-lg p-6">

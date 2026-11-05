@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
+import { useNavigate, useParams, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import pulseService from '../services/pulseService';
 import TipTapStudio from '../components/pulse/studio/TipTapStudio';
@@ -22,6 +22,7 @@ const PulseStudio = () => {
   const { id } = useParams();
   const isEditMode = Boolean(id);
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
 
   // Form State
@@ -92,6 +93,8 @@ const PulseStudio = () => {
               setCommentsEnabled(parsed.commentsEnabled !== false);
               setShowDraftRestoredNotice(true);
             }
+          } else if (location.state?.prefillMedia) {
+            setRelatedMedia([location.state.prefillMedia]);
           }
         } catch (err) {
           console.warn('Error reading saved draft from localStorage:', err);

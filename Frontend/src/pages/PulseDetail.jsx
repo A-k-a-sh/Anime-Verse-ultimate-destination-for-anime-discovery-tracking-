@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import DOMPurify from 'dompurify';
 import { useAuth } from '../context/AuthContext';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import pulseService from '../services/pulseService';
 import PulseVoting from '../components/pulse/PulseVoting';
 import PulseCommentSection from '../components/pulse/PulseCommentSection';
@@ -16,7 +17,11 @@ import {
   BookOpenIcon,
   CheckIcon,
   ArrowPathIcon,
-  BoltIcon
+  BoltIcon,
+  TrashIcon,
+  LockClosedIcon,
+  LockOpenIcon,
+  ShieldCheckIcon
 } from '@heroicons/react/24/outline';
 
 const PulseDetail = () => {
@@ -30,6 +35,8 @@ const PulseDetail = () => {
   const [copiedLink, setCopiedLink] = useState(false);
 
   const contentRef = useRef(null);
+
+  useDocumentTitle(pulse?.title ? `${pulse.title} • Otaku Pulse ⚡` : 'Otaku Pulse ⚡');
 
   useEffect(() => {
     let isMounted = true;
@@ -118,7 +125,29 @@ const PulseDetail = () => {
   }
 
   const isAuthor = user && pulse.author?._id && String(user._id) === String(pulse.author._id);
+  const isAdmin = Boolean(user?.isAdmin);
   const primaryMedia = pulse.relatedMedia?.[0];
+
+  const handleAdminDelete = async () => {
+    if (!window.confirm('MODERATION ACTION: Permanently remove this Pulse and all its comments?')) return;
+    try {
+      await pulseService.deletePulse(pulse._id);
+      navigate('/pulse');
+    } catch (err) {
+      alert('Failed to delete pulse: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const handleToggleComments = async () => {
+    try {
+      const res = await pulseService.toggleComments(pulse._id, !pulse.commentsEnabled);
+      if (res?.success) {
+        setPulse(prev => ({ ...prev, commentsEnabled: res.commentsEnabled }));
+      }
+    } catch (err) {
+      alert('Failed to toggle comments: ' + (err.response?.data?.message || err.message));
+    }
+  };
 
   // Sanitize TipTap HTML content
   const sanitizedContent = DOMPurify.sanitize(pulse.content || '', {
@@ -138,16 +167,58 @@ const PulseDetail = () => {
           <span>Back to Otaku Pulse</span>
         </Link>
 
-        {/* Author Edit Shortcut */}
-        {isAuthor && (
-          <Link
-            to={`/pulse/edit/${pulse._id}`}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-dark-200 hover:bg-dark-300 border border-white/10 text-xs font-bold text-gray-200 hover:text-white transition-all shadow-sm"
-          >
-            <PencilSquareIcon className="w-4 h-4 text-primary" />
-            <span>Edit Pulse</span>
-          </Link>
-        )}
+        {/* Action Controls for Author & Moderator */}
+        <div className="flex items-center gap-2">
+          {/* Author Edit Shortcut */}
+          {isAuthor && (
+            <Link
+              to={`/pulse/edit/${pulse._id}`}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-dark-200 hover:bg-dark-300 border border-white/10 text-xs font-bold text-gray-200 hover:text-white transition-all shadow-sm"
+            >
+              <PencilSquareIcon className="w-4 h-4 text-primary" />
+              <span>Edit Pulse</span>
+            </Link>
+          )}
+
+          {/* Author or Admin Comments Lock Toggle */}
+          {(isAuthor || isAdmin) && (
+            <button
+              type="button"
+              onClick={handleToggleComments}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-sm ${
+                pulse.commentsEnabled
+                  ? 'bg-dark-200 hover:bg-dark-300 text-gray-300 hover:text-white border-white/10'
+                  : 'bg-rose-500/20 text-rose-300 border-rose-500/30'
+              }`}
+              title={pulse.commentsEnabled ? 'Lock comments' : 'Unlock comments'}
+            >
+              {pulse.commentsEnabled ? (
+                <>
+                  <LockClosedIcon className="w-4 h-4" />
+                  <span className="hidden sm:inline">Lock Comments</span>
+                </>
+              ) : (
+                <>
+                  <LockOpenIcon className="w-4 h-4 text-rose-400" />
+                  <span className="hidden sm:inline">Unlock Comments</span>
+                </>
+              )}
+            </button>
+          )}
+
+          {/* Admin Moderation Delete Button */}
+          {isAdmin && !isAuthor && (
+            <button
+              type="button"
+              onClick={handleAdminDelete}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/30 text-rose-300 hover:text-rose-200 text-xs font-bold transition-all shadow-sm"
+              title="Delete as Moderator"
+            >
+              <TrashIcon className="w-4 h-4 text-rose-400" />
+              <span>Remove (Admin)</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Article Header */}

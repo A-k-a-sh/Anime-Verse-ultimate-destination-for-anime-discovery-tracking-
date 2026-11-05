@@ -7,6 +7,7 @@ import ImageGallery from '../components/ImageGallery';
 import CharacterCard from '../components/CharacterCard';
 import Loader from '../components/Loader';
 import AddToWatchlistModal from '../components/AddToWatchlistModal';
+import RelatedPulsesSection from '../components/pulse/RelatedPulsesSection';
 import { PlusIcon, ShareIcon, ChevronDownIcon, ChevronUpIcon, CheckIcon } from '@heroicons/react/24/outline';
 import { StarIcon, BookOpenIcon } from '@heroicons/react/24/solid';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
@@ -308,6 +309,14 @@ const MangaDetails = () => {
                 </div>
               </div>
             )}
+
+            {/* Otaku Pulse Community Theories & Reviews */}
+            <RelatedPulsesSection
+              mediaId={manga.malId}
+              mediaType="manga"
+              mediaTitle={manga.titleEnglish || manga.title}
+              mediaImage={manga.imageUrl}
+            />
 
             {/* Recommendations */}
             <div className="bg-dark-200 rounded-lg p-6">

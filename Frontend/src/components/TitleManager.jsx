@@ -11,6 +11,9 @@ const STATIC_ROUTE_TITLES = {
   '/recommendations': 'Anime Recommendations • AnimeVerse',
   '/manga': 'Browse Manga & Webtoons • AnimeVerse',
   '/manga/top': 'Top Manga of All Time • AnimeVerse',
+  '/pulse': 'Otaku Pulse ⚡ • Community Theories & Reviews • AnimeVerse',
+  '/pulse/write': 'Write a Pulse ⚡ • Otaku Pulse • AnimeVerse',
+  '/pulse/my-pulses': 'My Pulses ⚡ • Otaku Pulse • AnimeVerse',
   '/search': 'Search Anime & Manga • AnimeVerse',
   '/watchlist': 'My Watchlist & Library • AnimeVerse',
   '/dashboard': 'My Dashboard • AnimeVerse',
@@ -45,6 +48,10 @@ const TitleManager = () => {
       document.title = 'Manga Details • AnimeVerse';
     } else if (path.startsWith('/character/')) {
       document.title = 'Character Profile • AnimeVerse';
+    } else if (path.startsWith('/pulse/edit/')) {
+      document.title = 'Edit Pulse ⚡ • AnimeVerse';
+    } else if (path.startsWith('/pulse/')) {
+      document.title = 'Otaku Pulse ⚡ • AnimeVerse';
     }
   }, [location.pathname]);
 

@@ -23,6 +23,10 @@ import Seasonal from './pages/Seasonal';
 import Random from './pages/Random';
 import Recommendations from './pages/Recommendations';
 import TopAnime from './pages/TopAnime';
+import PulseFeed from './pages/PulseFeed';
+import PulseDetail from './pages/PulseDetail';
+import PulseStudio from './pages/PulseStudio';
+import MyPulses from './pages/MyPulses';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
@@ -58,6 +62,8 @@ function AppLayout() {
           <Route path="/manga/:id" element={<MangaDetails />} />
           <Route path="/read/:id" element={<ReadManga />} />
           <Route path="/read/:id/:chapter" element={<ReadManga />} />
+          <Route path="/pulse" element={<PulseFeed />} />
+          <Route path="/pulse/:slug" element={<PulseDetail />} />
           <Route path="/search" element={<Search />} />
           <Route path="/seasonal" element={<Seasonal />} />
           <Route path="/random" element={<Random />} />
@@ -73,6 +79,30 @@ function AppLayout() {
           <Route path="/terms" element={<Terms />} />
 
           {/* Protected Routes */}
+          <Route
+            path="/pulse/write"
+            element={
+              <ProtectedRoute>
+                <PulseStudio />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/pulse/edit/:id"
+            element={
+              <ProtectedRoute>
+                <PulseStudio />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/pulse/my-pulses"
+            element={
+              <ProtectedRoute>
+                <MyPulses />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/profile"
             element={

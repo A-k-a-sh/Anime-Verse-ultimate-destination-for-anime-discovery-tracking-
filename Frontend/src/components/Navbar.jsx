@@ -15,6 +15,7 @@ import {
   CalendarDaysIcon,
   BookOpenIcon,
   StarIcon,
+  BoltIcon,
 } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
 import SearchAutocomplete from './SearchAutocomplete';
@@ -143,6 +144,7 @@ const Navbar = () => {
 
   const userMenuItems = [
     { name: 'Profile', path: '/profile', icon: UserCircleIcon },
+    { name: 'My Pulses ⚡', path: '/pulse/my-pulses', icon: BoltIcon },
     { name: 'Watchlist & History', path: '/watchlist', icon: BookmarkIcon },
     { name: 'Dashboard', path: '/dashboard', icon: Squares2X2Icon },
     { name: 'Settings', path: '/settings', icon: Cog6ToothIcon },
@@ -339,6 +341,19 @@ const Navbar = () => {
             >
               Recs
             </Link>
+
+            {/* Otaku Pulse Community Hub Link */}
+            <Link
+              to="/pulse"
+              className={`px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1 transition-all duration-200 ${
+                location.pathname.startsWith('/pulse')
+                  ? 'bg-primary/20 text-primary border border-primary/30 shadow-inner'
+                  : 'text-gray-300 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <BoltIcon className="w-3.5 h-3.5 text-amber-400" />
+              <span>Otaku Pulse</span>
+            </Link>
           </nav>
 
           {/* =====================================================================
@@ -494,11 +509,11 @@ const Navbar = () => {
                     Home Feed
                   </Link>
                   <Link
-                    to="/random"
+                    to="/pulse"
                     className="p-2.5 rounded-xl bg-primary/10 border border-primary/20 text-center text-xs font-bold text-primary flex items-center justify-center gap-1.5 hover:bg-primary/20 transition-colors"
                   >
-                    <DiceIcon className="w-3.5 h-3.5" />
-                    <span>Random Pick</span>
+                    <BoltIcon className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Otaku Pulse</span>
                   </Link>
                 </div>
 

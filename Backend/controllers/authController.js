@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { isAdmin } = require('../middleware/adminCheck');
 
 // Generate JWT token
 const generateToken = (userId) => {
@@ -45,7 +46,8 @@ const register = async (req, res, next) => {
         email: user.email,
         avatar: user.avatar,
         favoriteGenres: user.favoriteGenres,
-        theme: user.theme
+        theme: user.theme,
+        isAdmin: isAdmin(user)
       }
     });
   } catch (error) {
@@ -93,7 +95,8 @@ const login = async (req, res, next) => {
         email: user.email,
         avatar: user.avatar,
         favoriteGenres: user.favoriteGenres,
-        theme: user.theme
+        theme: user.theme,
+        isAdmin: isAdmin(user)
       }
     });
   } catch (error) {
@@ -117,7 +120,8 @@ const getMe = async (req, res, next) => {
         avatar: user.avatar,
         favoriteGenres: user.favoriteGenres,
         theme: user.theme,
-        createdAt: user.createdAt
+        createdAt: user.createdAt,
+        isAdmin: isAdmin(user)
       }
     });
   } catch (error) {
