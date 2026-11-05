@@ -16,6 +16,7 @@ const mangaRoutes = require('./routes/mangaRoutes');
 const watchlistRoutes = require('./routes/watchlistRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
 const commentRoutes = require('./routes/commentRoutes');
+const pulseRoutes = require('./routes/pulseRoutes');
 
 // Initialize express app
 const app = express();
@@ -163,7 +164,8 @@ app.get('/', async (req, res) => {
       manga: '/api/manga',
       watchlist: '/api/watchlist',
       reviews: '/api/reviews',
-      comments: '/api/comments'
+      comments: '/api/comments',
+      pulses: '/api/pulses'
     },
     sampleEndpoints: {
       topAnime: '/api/anime/top',
@@ -182,6 +184,7 @@ app.use('/api/manga', mangaRoutes);
 app.use('/api/watchlist', watchlistRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/comments', commentRoutes);
+app.use('/api/pulses', pulseRoutes);
 
 // 404 handler
 app.use((req, res) => {
