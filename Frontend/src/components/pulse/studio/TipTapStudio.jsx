@@ -24,7 +24,8 @@ const TipTapStudio = ({
       StarterKit.configure({
         heading: {
           levels: [1, 2, 3]
-        }
+        },
+        link: false // StarterKit v3 includes link by default; disable to prevent duplicate extension warning
       }),
       Image.configure({
         inline: false,
@@ -76,10 +77,24 @@ const TipTapStudio = ({
     hiddenFileInputRef.current?.click();
   };
 
-  const handleHiddenFileChange = (e) => {
+  const handleUploadAndInsert = async (file) => {
+    if (!file || !editor) return;
+    try {
+      if (onImageUpload) {
+        const url = await onImageUpload(file);
+        if (url) {
+          editor.chain().focus().setImage({ src: url }).run();
+        }
+      }
+    } catch (err) {
+      console.error('Failed to upload/insert image into editor:', err);
+    }
+  };
+
+  const handleHiddenFileChange = async (e) => {
     const file = e.target.files?.[0];
-    if (file && onImageUpload) {
-      onImageUpload(file);
+    if (file) {
+      await handleUploadAndInsert(file);
     }
     e.target.value = '';
   };
@@ -89,7 +104,7 @@ const TipTapStudio = ({
       {/* Sticky Top Toolbar */}
       <StickyToolbar
         editor={editor}
-        onImageUpload={onImageUpload}
+        onImageUpload={handleUploadAndInsert}
         isUploadingImage={isUploadingImage}
       />
 

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   ArrowUturnLeftIcon,
   ArrowUturnRightIcon,
@@ -13,8 +13,21 @@ const StickyToolbar = ({ editor, onImageUpload, isUploadingImage = false }) => {
   const [linkUrl, setLinkUrl] = useState('');
   const [showYoutubeModal, setShowYoutubeModal] = useState(false);
   const [youtubeUrl, setYoutubeUrl] = useState('');
+  const [, setTick] = useState(0);
 
   const fileInputRef = useRef(null);
+
+  // Re-render toolbar synchronously on every transaction / mark toggle / selection change
+  useEffect(() => {
+    if (!editor) return;
+    const update = () => setTick(t => t + 1);
+    editor.on('transaction', update);
+    editor.on('selectionUpdate', update);
+    return () => {
+      editor.off('transaction', update);
+      editor.off('selectionUpdate', update);
+    };
+  }, [editor]);
 
   if (!editor) return null;
 
@@ -42,10 +55,10 @@ const StickyToolbar = ({ editor, onImageUpload, isUploadingImage = false }) => {
     setShowYoutubeModal(false);
   };
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
     if (file && onImageUpload) {
-      onImageUpload(file);
+      await onImageUpload(file);
     }
     e.target.value = '';
   };

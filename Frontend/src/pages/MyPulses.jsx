@@ -16,7 +16,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 const MyPulses = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   const [pulses, setPulses] = useState([]);
@@ -24,13 +24,19 @@ const MyPulses = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
 
+  const userId = user?._id || user?.id;
+
   const fetchMyPulses = async () => {
-    if (!user?._id) return;
+    if (authLoading) return;
+    if (!userId) {
+      setIsLoading(false);
+      return;
+    }
     try {
       setIsLoading(true);
       setErrorMsg('');
       const res = await pulseService.getAllPulses({
-        author: user._id,
+        author: userId,
         status: activeTab === 'all' ? 'all' : activeTab,
         limit: 50
       });
@@ -47,7 +53,7 @@ const MyPulses = () => {
 
   useEffect(() => {
     fetchMyPulses();
-  }, [user?._id, activeTab]);
+  }, [userId, activeTab, authLoading]);
 
   const handleDelete = async (id, title) => {
     if (!window.confirm(`Are you sure you want to delete "${title}"? This will permanently delete the post and its comments.`)) {

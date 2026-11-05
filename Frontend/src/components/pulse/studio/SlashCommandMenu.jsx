@@ -108,6 +108,7 @@ const SlashCommandMenu = ({ editor, openImageUpload, openYoutubeModal }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [coords, setCoords] = useState({ top: 0, left: 0 });
   const menuRef = useRef(null);
 
   useEffect(() => {
@@ -126,6 +127,24 @@ const SlashCommandMenu = ({ editor, openImageUpload, openYoutubeModal }) => {
         setQuery(match[1].toLowerCase());
         setIsOpen(true);
         setSelectedIndex(0);
+
+        try {
+          const posCoords = editor.view.coordsAtPos($from.pos);
+          const menuWidth = 320;
+          const menuHeight = 280;
+
+          let top = posCoords.bottom + 8;
+          let left = Math.min(Math.max(posCoords.left, 16), window.innerWidth - menuWidth - 20);
+
+          // If overflowing bottom of screen, flip to above cursor
+          if (top + menuHeight > window.innerHeight && posCoords.top > menuHeight + 20) {
+            top = posCoords.top - menuHeight - 8;
+          }
+
+          setCoords({ top, left });
+        } catch (err) {
+          console.warn('Coords lookup failed:', err);
+        }
       } else {
         setIsOpen(false);
       }
@@ -153,8 +172,8 @@ const SlashCommandMenu = ({ editor, openImageUpload, openYoutubeModal }) => {
     const slashPos = $from.pos - (query.length + 1);
 
     editor.chain().focus().deleteRange({ from: slashPos, to: $from.pos }).run();
-    cmd.action(editor, { openImageUpload, openYoutubeModal });
     setIsOpen(false);
+    cmd.action(editor, { openImageUpload, openYoutubeModal });
   };
 
   useEffect(() => {
@@ -163,23 +182,28 @@ const SlashCommandMenu = ({ editor, openImageUpload, openYoutubeModal }) => {
     const handleKeyDown = (e) => {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
+        e.stopPropagation();
         setSelectedIndex(prev => (prev + 1) % (filteredCommands.length || 1));
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
+        e.stopPropagation();
         setSelectedIndex(prev => (prev - 1 + filteredCommands.length) % (filteredCommands.length || 1));
       } else if (e.key === 'Enter') {
         e.preventDefault();
+        e.stopPropagation();
         if (filteredCommands[selectedIndex]) {
           executeCommand(filteredCommands[selectedIndex]);
         }
       } else if (e.key === 'Escape') {
         e.preventDefault();
+        e.stopPropagation();
         setIsOpen(false);
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    // Use capturing phase so Enter is consumed before ProseMirror inserts newline
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
   }, [isOpen, filteredCommands, selectedIndex]);
 
   if (!isOpen || filteredCommands.length === 0) return null;
@@ -187,11 +211,10 @@ const SlashCommandMenu = ({ editor, openImageUpload, openYoutubeModal }) => {
   return (
     <div
       ref={menuRef}
-      className="fixed z-40 bg-dark-200/95 backdrop-blur-2xl border border-white/15 rounded-2xl p-2 w-72 sm:w-80 shadow-[0_20px_50px_rgba(0,0,0,0.8)] max-h-80 overflow-y-auto"
+      className="fixed z-50 bg-dark-200/95 backdrop-blur-2xl border border-white/15 rounded-2xl p-2 w-72 sm:w-80 shadow-[0_20px_50px_rgba(0,0,0,0.8)] max-h-80 overflow-y-auto animate-fade-in"
       style={{
-        // Positioned cleanly within editor view
-        bottom: '2rem',
-        right: '2rem'
+        top: `${coords.top}px`,
+        left: `${coords.left}px`
       }}
     >
       <div className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400 border-b border-white/10 mb-1 flex items-center justify-between">

@@ -41,7 +41,8 @@ const PulseCommentItem = ({
   const [isVoting, setIsVoting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const isAuthor = user && comment.author?._id && String(user._id) === String(comment.author._id);
+  const currentUserId = user?._id || user?.id;
+  const isAuthor = currentUserId && comment.author?._id && String(currentUserId) === String(comment.author._id);
 
   const handleVote = async (dir) => {
     if (!isAuthenticated) {

@@ -124,7 +124,8 @@ const PulseDetail = () => {
     );
   }
 
-  const isAuthor = user && pulse.author?._id && String(user._id) === String(pulse.author._id);
+  const currentUserId = user?._id || user?.id;
+  const isAuthor = currentUserId && pulse.author?._id && String(currentUserId) === String(pulse.author._id);
   const isAdmin = Boolean(user?.isAdmin);
   const primaryMedia = pulse.relatedMedia?.[0];
 
@@ -248,7 +249,7 @@ const PulseDetail = () => {
         </h1>
 
         {/* Author Byline & Article Metrics */}
-        <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-y border-white/10">
+        <div className="flex flex-wrap items-center justify-between gap-4 py-4 sm:py-5 border-y border-white/10">
           <div className="flex items-center gap-3">
             <img
               src={pulse.author?.avatar || `https://ui-avatars.com/api/?background=random&name=${encodeURIComponent(pulse.author?.username || 'O')}`}

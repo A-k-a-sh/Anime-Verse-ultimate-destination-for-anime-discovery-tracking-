@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BubbleMenu } from '@tiptap/react/menus';
 import {
   LinkIcon,
@@ -8,6 +8,18 @@ import {
 const EditorBubbleMenu = ({ editor }) => {
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    if (!editor) return;
+    const update = () => setTick(t => t + 1);
+    editor.on('transaction', update);
+    editor.on('selectionUpdate', update);
+    return () => {
+      editor.off('transaction', update);
+      editor.off('selectionUpdate', update);
+    };
+  }, [editor]);
 
   if (!editor) return null;
 
