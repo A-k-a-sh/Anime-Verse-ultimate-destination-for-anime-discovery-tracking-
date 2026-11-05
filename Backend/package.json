@@ -9,7 +9,7 @@
     "seed:top": "node scripts/seedTopBatch.js",
     "seed:manga": "node scripts/seedTopManga.js",
     "sync:airing": "node scripts/syncAiring.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node tests/pulseSmokeTest.js"
   },
   "keywords": [
     "anime",
