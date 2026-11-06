@@ -13,9 +13,6 @@ import {
  * - Server 2: ZokoAnime (zokoanime.video)
  * - Server 3: VidLink (vidlink.pro)
  * - Server 4: AnimeEmbed (animeembed.com)
- *
- * Implements calibrated iframe sandboxing to block popup ads/new tabs
- * while preserving HLS video playback, MSE, Blob URLs, and container fullscreen.
  */
 const VideoPlayer = ({
   malId,
@@ -264,7 +261,7 @@ const VideoPlayer = ({
         </div>
       )}
 
-      {/* Embedded Stream Iframe with Calibrated Sandbox Policy */}
+      {/* Embedded Stream Iframe */}
       <iframe
         key={iframeKey}
         ref={iframeRef}
@@ -272,9 +269,8 @@ const VideoPlayer = ({
         title={`Episode ${currentEpisode} Player`}
         width="100%"
         height="100%"
-        allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+        allow="fullscreen; autoplay"
         allowFullScreen
-        sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
         className="w-full h-full border-0 rounded-xl bg-black"
       />
 
