@@ -2,7 +2,12 @@ const crypto = require('crypto');
 const mongoose = require('mongoose');
 const Pulse = require('../models/Pulse');
 const PulseComment = require('../models/PulseComment');
-const { uploadImageBuffer, deleteImageByPublicId } = require('../services/cloudinaryService');
+const {
+  uploadImageBuffer,
+  deleteImageByPublicId,
+  extractCloudinaryPublicIds,
+  deleteMultipleImages
+} = require('../services/cloudinaryService');
 
 /**
  * Helper to generate a clean, URL-safe unique slug
@@ -251,7 +256,8 @@ const createPulse = async (req, res) => {
       relatedMedia = [],
       hasSpoilers = false,
       commentsEnabled = true,
-      status = 'published'
+      status = 'published',
+      uploadedAssetPublicIds = []
     } = req.body;
 
     if (!title || !title.trim()) {
@@ -291,6 +297,20 @@ const createPulse = async (req, res) => {
     await pulse.save();
     await pulse.populate('author', 'username avatar');
 
+    // Smart cleanup of discarded session uploads (e.g. backspaced images or removed banners)
+    if (Array.isArray(uploadedAssetPublicIds) && uploadedAssetPublicIds.length > 0) {
+      const activeIds = extractCloudinaryPublicIds(content);
+      if (coverImage?.publicId) {
+        activeIds.add(coverImage.publicId);
+      }
+      const orphanIds = uploadedAssetPublicIds.filter(id => !activeIds.has(id));
+      if (orphanIds.length > 0) {
+        deleteMultipleImages(orphanIds).catch(err => {
+          console.warn('Background cleanup of discarded session assets failed:', err);
+        });
+      }
+    }
+
     res.status(201).json({
       success: true,
       data: pulse
@@ -316,8 +336,15 @@ const updatePulse = async (req, res) => {
       relatedMedia,
       hasSpoilers,
       commentsEnabled,
-      status
+      status,
+      uploadedAssetPublicIds = []
     } = req.body;
+
+    // Track prior active assets before applying updates
+    const priorActiveIds = extractCloudinaryPublicIds(pulse.content);
+    if (pulse.coverImage?.publicId) {
+      priorActiveIds.add(pulse.coverImage.publicId);
+    }
 
     if (title && title.trim()) {
       pulse.title = title.trim();
@@ -335,12 +362,6 @@ const updatePulse = async (req, res) => {
     }
 
     if (coverImage) {
-      // If cover image publicId changed, delete old image from Cloudinary
-      if (pulse.coverImage?.publicId && coverImage.publicId && pulse.coverImage.publicId !== coverImage.publicId) {
-        deleteImageByPublicId(pulse.coverImage.publicId).catch(err => {
-          console.warn('Failed to clean up replaced cover image:', err);
-        });
-      }
       pulse.coverImage = {
         url: coverImage.url || null,
         publicId: coverImage.publicId || null
@@ -370,6 +391,24 @@ const updatePulse = async (req, res) => {
     await pulse.save();
     await pulse.populate('author', 'username avatar');
 
+    // Smart cleanup of discarded assets (from previous content + new uploads during edit)
+    const newActiveIds = extractCloudinaryPublicIds(pulse.content);
+    if (pulse.coverImage?.publicId) {
+      newActiveIds.add(pulse.coverImage.publicId);
+    }
+
+    const candidatePool = new Set([
+      ...priorActiveIds,
+      ...(Array.isArray(uploadedAssetPublicIds) ? uploadedAssetPublicIds : [])
+    ]);
+
+    const orphanIds = Array.from(candidatePool).filter(id => !newActiveIds.has(id));
+    if (orphanIds.length > 0) {
+      deleteMultipleImages(orphanIds).catch(err => {
+        console.warn('Background cleanup of discarded update assets failed:', err);
+      });
+    }
+
     res.json({
       success: true,
       data: pulse
@@ -387,10 +426,15 @@ const deletePulse = async (req, res) => {
   try {
     const pulse = req.pulse; // Attached by verifyPulseAuthorOrAdmin
 
-    // Clean up Cloudinary cover image if it exists
+    // Clean up all Cloudinary assets associated with this Pulse (cover + inline content images)
+    const assetsToDelete = extractCloudinaryPublicIds(pulse.content);
     if (pulse.coverImage?.publicId) {
-      deleteImageByPublicId(pulse.coverImage.publicId).catch(err => {
-        console.warn('Failed to clean up Cloudinary cover asset:', err);
+      assetsToDelete.add(pulse.coverImage.publicId);
+    }
+
+    if (assetsToDelete.size > 0) {
+      deleteMultipleImages(assetsToDelete).catch(err => {
+        console.warn('Failed to clean up Cloudinary assets on pulse deletion:', err);
       });
     }
 
@@ -525,6 +569,32 @@ const uploadPulseImage = async (req, res) => {
   }
 };
 
+// @desc    Cleanup uncommitted uploaded assets (e.g. user cleared draft or cancelled)
+// @route   POST /api/pulses/cleanup-assets
+// @access  Authenticated
+const cleanupDiscardedAssets = async (req, res) => {
+  try {
+    const { publicIds } = req.body;
+    if (!Array.isArray(publicIds) || publicIds.length === 0) {
+      return res.status(200).json({ success: true, message: 'No assets to clean up' });
+    }
+
+    // Safety: ensure assets belong to animeverse/pulses folder
+    const safeIds = publicIds.filter(id => typeof id === 'string' && id.startsWith('animeverse/pulses/'));
+    if (safeIds.length > 0) {
+      await deleteMultipleImages(safeIds);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Cleaned up ${safeIds.length} discarded asset(s)`
+    });
+  } catch (err) {
+    console.error('cleanupDiscardedAssets error:', err);
+    res.status(500).json({ success: false, message: 'Server error cleaning up assets' });
+  }
+};
+
 module.exports = {
   getAllPulses,
   getPulseBySlug,
@@ -534,5 +604,6 @@ module.exports = {
   deletePulse,
   toggleComments,
   votePulse,
-  uploadPulseImage
+  uploadPulseImage,
+  cleanupDiscardedAssets
 };

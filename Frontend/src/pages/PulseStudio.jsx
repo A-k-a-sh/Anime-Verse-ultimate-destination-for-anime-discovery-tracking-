@@ -47,6 +47,7 @@ const PulseStudio = () => {
 
   const coverInputRef = useRef(null);
   const lastSavedRef = useRef(null);
+  const sessionUploadedAssetsRef = useRef(new Set());
 
   const draftKey = `animeverse_pulse_draft_${id || 'new'}`;
 
@@ -91,6 +92,9 @@ const PulseStudio = () => {
               setRelatedMedia(parsed.relatedMedia || []);
               setHasSpoilers(Boolean(parsed.hasSpoilers));
               setCommentsEnabled(parsed.commentsEnabled !== false);
+              if (Array.isArray(parsed.uploadedAssetPublicIds)) {
+                parsed.uploadedAssetPublicIds.forEach(pid => sessionUploadedAssetsRef.current.add(pid));
+              }
               setShowDraftRestoredNotice(true);
             }
           } else if (location.state?.prefillMedia) {
@@ -123,6 +127,7 @@ const PulseStudio = () => {
         relatedMedia,
         hasSpoilers,
         commentsEnabled,
+        uploadedAssetPublicIds: Array.from(sessionUploadedAssetsRef.current),
         updatedAt: new Date().toISOString()
       };
 
@@ -143,7 +148,16 @@ const PulseStudio = () => {
   }, [title, content, excerpt, coverImage, tags, relatedMedia, hasSpoilers, commentsEnabled, draftKey, isLoadingPulse]);
 
   // Discard draft
-  const handleDiscardDraft = () => {
+  const handleDiscardDraft = async () => {
+    // If user uploaded images during this draft session, clean them up from Cloudinary
+    if (sessionUploadedAssetsRef.current.size > 0) {
+      const assetsToClean = Array.from(sessionUploadedAssetsRef.current);
+      sessionUploadedAssetsRef.current.clear();
+      pulseService.cleanupDiscardedAssets(assetsToClean).catch(err => {
+        console.warn('Failed to clean up discarded draft assets:', err);
+      });
+    }
+
     localStorage.removeItem(draftKey);
     setTitle('');
     setContent('');
@@ -174,6 +188,9 @@ const PulseStudio = () => {
       const res = await pulseService.uploadPulseImage(file);
       if (res?.url) {
         setCoverImage({ url: res.url, publicId: res.publicId || null });
+        if (res.publicId) {
+          sessionUploadedAssetsRef.current.add(res.publicId);
+        }
       }
     } catch (err) {
       console.error('Cover upload error:', err);
@@ -190,6 +207,9 @@ const PulseStudio = () => {
       setIsUploadingInline(true);
       setErrorMsg('');
       const res = await pulseService.uploadPulseImage(file);
+      if (res?.publicId) {
+        sessionUploadedAssetsRef.current.add(res.publicId);
+      }
       return res.url;
     } catch (err) {
       console.error('Inline image upload error:', err);
@@ -240,7 +260,8 @@ const PulseStudio = () => {
         relatedMedia,
         hasSpoilers,
         commentsEnabled,
-        status: targetStatus
+        status: targetStatus,
+        uploadedAssetPublicIds: Array.from(sessionUploadedAssetsRef.current)
       };
 
       let result;
@@ -250,7 +271,8 @@ const PulseStudio = () => {
         result = await pulseService.createPulse(payload);
       }
 
-      // Clear local draft upon successful save
+      // Clear local draft and session assets tracking upon successful save
+      sessionUploadedAssetsRef.current.clear();
       localStorage.removeItem(draftKey);
 
       const pulseSlug = result?.data?.slug;

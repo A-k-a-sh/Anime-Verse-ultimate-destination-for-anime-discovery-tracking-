@@ -151,6 +151,43 @@ const cloudinaryService = require('../services/cloudinaryService');
 assert.strictEqual(typeof cloudinaryService.uploadImageBuffer, 'function', 'uploadImageBuffer must be a function');
 assert.strictEqual(typeof cloudinaryService.deleteImageByPublicId, 'function', 'deleteImageByPublicId must be a function');
 assert.strictEqual(typeof cloudinaryService.isConfigured, 'function', 'isConfigured must be a function');
+assert.strictEqual(typeof cloudinaryService.extractCloudinaryPublicIds, 'function', 'extractCloudinaryPublicIds must be a function');
+assert.strictEqual(typeof cloudinaryService.deleteMultipleImages, 'function', 'deleteMultipleImages must be a function');
 console.log('✅ Test 5 Passed: Cloudinary service interfaces correctly exported.\n');
 
-console.log('🎉 All 5 Automated Smoke Tests Passed with 0 Failures!');
+// 6. Smart Orphan Media Extraction & Reconciliation Test
+console.log('--- Test 6: Smart Orphan Media Extraction & Reconciliation ---');
+const sampleHtml = `
+  <h2>My Epic Review</h2>
+  <p>Here is the first image:</p>
+  <img src="https://res.cloudinary.com/mycloud/image/upload/v1700000000/animeverse/pulses/photo_one.jpg" />
+  <p>Here is an optimized transformed image:</p>
+  <img src="https://res.cloudinary.com/mycloud/image/upload/f_auto,q_auto/v1700000001/animeverse/pulses/photo_two.png" />
+  <p>External image from unsplash (should not match):</p>
+  <img src="https://images.unsplash.com/photo-123" />
+`;
+
+const extracted = cloudinaryService.extractCloudinaryPublicIds(sampleHtml);
+assert.strictEqual(extracted.size, 2, 'Should extract exactly 2 Cloudinary public IDs');
+assert.ok(extracted.has('animeverse/pulses/photo_one'), 'Extracted IDs should contain photo_one');
+assert.ok(extracted.has('animeverse/pulses/photo_two'), 'Extracted IDs should contain photo_two');
+assert.ok(!extracted.has('photo-123'), 'External images should be ignored');
+
+// Test reconciliation diff
+const uploadedSession = [
+  'animeverse/pulses/photo_one',
+  'animeverse/pulses/photo_two',
+  'animeverse/pulses/backspaced_inline_three', // removed by user
+  'animeverse/pulses/old_banner_four' // removed banner
+];
+
+const activeCover = { publicId: 'animeverse/pulses/final_banner_five' };
+const activeSet = new Set([...extracted, activeCover.publicId]);
+
+const orphanIds = uploadedSession.filter(id => !activeSet.has(id));
+assert.strictEqual(orphanIds.length, 2, 'Exactly 2 unreferenced assets should be identified as orphans');
+assert.deepStrictEqual(orphanIds.sort(), ['animeverse/pulses/backspaced_inline_three', 'animeverse/pulses/old_banner_four'].sort());
+
+console.log('✅ Test 6 Passed: Media extraction and orphan reconciliation correctly identify unreferenced assets.\n');
+
+console.log('🎉 All 6 Automated Smoke Tests Passed with 0 Failures!');

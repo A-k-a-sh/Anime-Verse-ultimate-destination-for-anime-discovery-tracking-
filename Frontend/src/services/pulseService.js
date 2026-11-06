@@ -109,6 +109,15 @@ export const pulseService = {
   voteComment: async (pulseId, commentId, direction) => {
     const response = await api.post(`/pulses/${pulseId}/comments/${commentId}/vote`, { direction });
     return response.data;
+  },
+
+  /**
+   * Cleanup discarded/uncommitted uploaded assets from Cloudinary
+   */
+  cleanupDiscardedAssets: async (publicIds) => {
+    if (!Array.isArray(publicIds) || publicIds.length === 0) return { success: true };
+    const response = await api.post('/pulses/cleanup-assets', { publicIds });
+    return response.data;
   }
 };
 

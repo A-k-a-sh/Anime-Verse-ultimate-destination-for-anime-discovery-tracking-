@@ -17,7 +17,8 @@ const {
   deletePulse,
   toggleComments,
   votePulse,
-  uploadPulseImage
+  uploadPulseImage,
+  cleanupDiscardedAssets
 } = require('../controllers/pulseController');
 
 const {
@@ -64,6 +65,9 @@ router.post('/', protect, createPulse);
 
 // POST /api/pulses/upload-image - Upload cover or inline image to Cloudinary
 router.post('/upload-image', protect, handleUpload, uploadPulseImage);
+
+// POST /api/pulses/cleanup-assets - Prune uncommitted uploaded assets from Cloudinary
+router.post('/cleanup-assets', protect, cleanupDiscardedAssets);
 
 // GET /api/pulses/id/:id - Fetch pulse by Mongo ID (used by authoring editor)
 router.get('/id/:id', optionalAuth, getPulseById);
