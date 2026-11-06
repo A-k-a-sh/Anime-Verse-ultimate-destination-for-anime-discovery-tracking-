@@ -14,6 +14,12 @@ Your ultimate destination for anime discovery, streaming, tracking, and manga re
 - **Interactive Manga Chapter Selector & Deliberate Tracking**: 50-chapter range pagination tabs (`1-50`, `51-100`, etc.), real-time chapter search across all chapters, sort toggle (`1 → Latest` / `Latest → 1`), read status checkmark badges `✓`, dynamic "Read Chapter 1" / "Continue Reading Ch X" CTAs, "Resume Ch X" Watchlist buttons, and a "Continue Reading" shelf on the home feed. Strictly adheres to deliberate user choice (exploring chapters updates reading history without auto-adding to Watchlist).
 - **Embedded Dual-Server Video Player**: Stream anime episodes directly on site with dual-server redundancy (Server 1: MegaPlay, Server 2: ZokoAnime with custom purple theme and Auto-Skip), Sub/Dub/HSub tracks, failover recovery, and collapsible 18+ adult streaming warning notice.
 - **Theater & Lights-Off (Cinema) Modes**: YouTube-style wide theater mode (82vh) and viewport-wide cinema dimming (`z-[60]`) with custom keyboard shortcuts (`N`, `P`, `S`, `T`, `L`, `F`, `Esc`).
+- **Otaku Pulse ⚡ Community Blogging & Discussion Platform**: Full-stack rich-content publication and community engine.
+  - **Headless TipTap Studio (`/pulse/write`, `/pulse/edit/:id`)**: Rich text authoring with custom interactive Anime Spoiler marks (`filter: blur(8px)`, click-to-reveal), inline Cloudinary image insertion, YouTube embeds, sticky top toolbar, floating selection bubble menu, and slash `/` command quick inserts.
+  - **Smart Cloudinary Media Pipeline**: Direct stream uploading via Multer memory buffer with instant previews, 5-second `localStorage` draft protection, and publish-time orphan asset pruning (unreferenced/backspaced images and removed banners are automatically deleted from Cloudinary in the background; complete asset cleanup on post deletion).
+  - **Reddit-Style Atomic Voting Engine**: Real-time upvoting/downvoting with compound score calculations (`pulseScore`), concurrency safety, and authenticated user vote states (`up`, `down`, `null`).
+  - **Threaded Discussion Trees**: Recursive nested comment hierarchies (up to 4 levels) with Reddit-style graceful deletion masking (preserving conversation continuity when replies exist), comment voting, and author/admin comment locking.
+  - **Otaku Pulse Hub & Reader Pages (`/pulse`, `/pulse/:slug`, `/pulse/my-pulses`)**: Public spotlight carousel, multi-tag filtering, sort tabs (Trending, Top, Latest), real-time search, automated reading time estimation, XSS sanitization via DOMPurify, author dashboard, and two-way catalog cross-linking with anime and manga detail pages.
 - **Comprehensive 46-Genre Taxonomy & Collapsible Filter**: Complete AniList & MyAnimeList unified genre taxonomy (46 canonical genres) with a clean collapsible filter component (`CollapsibleGenreFilter`), showing 12 popular genres upfront with one-click full catalog expansion and auto-expansion on niche genres across Browse Anime and Browse Manga.
 - **Two-Tier Dynamic Tab Title & SEO Management**: Custom native React 19 `useDocumentTitle` hook paired with global `TitleManager` route listener. Automatically formats browser tab titles: `${Anime} - Episode ${Ep} • AnimeVerse` (Watch), `Top Anime of All Time • AnimeVerse` (Top Charts), `${Season} ${Year} Seasonal Anime • AnimeVerse` (Seasonal Hub), catalog browse titles, and search queries.
 - **Interactive Episode Selector**: 50-episode range pagination, search filter, Grid vs List view toggling, and real episode title resolution (AniList & Kitsu mapping fallback).
@@ -31,14 +37,18 @@ Your ultimate destination for anime discovery, streaming, tracking, and manga re
 - **React 19** (`^19.2.0`) - Modern React UI component library with concurrent features
 - **Vite 7** (`^7.2.4`) - High-performance next-generation frontend build tool (< 2.5s production bundling)
 - **Tailwind CSS 3** (`^3.4.17`) - Utility-first styling with custom dark theme, glassmorphic blur, and neon glow presets
+- **TipTap Rich Text Suite** (`@tiptap/react`, `@tiptap/starter-kit`, `@tiptap/pm`) - Extensible headless rich text editor powering the Otaku Pulse Studio with custom Anime Spoiler extension
 - **Framer Motion 12** (`^12.23.24`) - Smooth layout transitions, Ken-Burns carousel crossfades, and parallax scroll transforms
 - **React Router 7** (`^7.9.6`) - Client-side single page application routing with split landing/home routes
+- **DOMPurify** (`^3.3.1`) - Ultra-fast XSS sanitizer for safe rich-text article and comment rendering
 - **Heroicons 2** (`^2.2.0`) - Clean, modern SVG iconography
 - **Axios 1** (`^1.13.2`) - HTTP client with request deduplication and in-memory caching
 
 ### Backend
 - **Node.js & Express** - Scalable REST API framework
 - **MongoDB & Mongoose** - Document database with schema indexing and database-first caching
+- **Cloudinary SDK** (`^2.11.0`) - Cloud-based media management for automated optimization, storage, and programmatic cleanup
+- **Multer** (`^2.5.0`) - Memory-buffer file upload middleware for direct Cloudinary streaming
 - **AniList GraphQL Client** - Resilient external data provider client (`graphql.anilist.co`)
 - **JWT (JSON Web Tokens)** - Stateless authentication
 - **Bcrypt** - Salted password hashing
@@ -47,6 +57,7 @@ Your ultimate destination for anime discovery, streaming, tracking, and manga re
 
 ### External API & Streaming Providers
 - **AniList GraphQL API v2** - High-speed, modern GraphQL catalog API for anime, manga, and characters
+- **Cloudinary Media CDN** - Cloud infrastructure for blog cover art and inline rich-text images with auto-format and smart orphan pruning
 - **Server 1: MegaPlay (`megaplay.buzz`)** - High-speed default video stream provider with Sub/Dub audio tracks
 - **Server 2: ZokoAnime (`zokoanime.video`)** - Multi-server video stream provider with Auto-Skip intro/outro, Sub/Dub/HSub tracks, and custom purple accent skin
 - **Kitsu API (`kitsu.io`)** - Secondary episode mapping provider ensuring complete episode lists and titles for long-running series
@@ -58,6 +69,7 @@ Your ultimate destination for anime discovery, streaming, tracking, and manga re
 ### Prerequisites
 - Node.js (v18 or higher recommended)
 - MongoDB (local community edition or MongoDB Atlas)
+- Cloudinary Account (free tier) for Otaku Pulse blog media uploads
 - npm or yarn
 
 ### Backend Setup
@@ -80,6 +92,16 @@ MONGO_URI=mongodb://127.0.0.1:27017/anime-site
 JWT_SECRET=your_jwt_secret_key
 ANILIST_API_URL=https://graphql.anilist.co
 FRONTEND_URL=http://localhost:5173
+
+# Cloudinary Media Pipeline (Otaku Pulse)
+CLOUDINARY_URL=cloudinary://<api_key>:<api_secret>@<cloud_name>
+# Or discrete variables:
+# CLOUDINARY_CLOUD_NAME=your_cloud_name
+# CLOUDINARY_API_KEY=your_api_key
+# CLOUDINARY_API_SECRET=your_api_secret
+
+# Admin Access Controls (comma-separated email list)
+ADMIN_EMAILS=admin@animeverse.com
 ```
 
 4. Seed initial catalog data (Optional but recommended):
@@ -174,6 +196,22 @@ npm run dev
 - `PUT /api/watchlist/:id` - Update watched episode progress, status, or personal score
 - `DELETE /api/watchlist/:id` - Remove anime from watchlist
 - `GET /api/watchlist/stats` - Compute user tracking statistics (total episodes, mean score, distribution)
+
+### Otaku Pulse (Community Blog & Discussions)
+- `GET /api/pulses` - Public feed with filters (sort, tag, mediaId, search, page, limit)
+- `POST /api/pulses` - Publish a new Pulse or save draft (Authenticated)
+- `GET /api/pulses/:slug` - Public reader view (increments view count)
+- `GET /api/pulses/id/:id` - Fetch pulse by Mongo ID (used by authoring editor)
+- `PUT /api/pulses/:id` - Edit Pulse and reconcile media assets (Author only)
+- `DELETE /api/pulses/:id` - Delete Pulse and purge all Cloudinary assets (Author or Admin)
+- `POST /api/pulses/:id/vote` - Upvote / Downvote a Pulse (`direction: 'up' | 'down'`)
+- `PATCH /api/pulses/:id/toggle-comments` - Lock/Unlock comments (Author or Admin)
+- `POST /api/pulses/upload-image` - Stream image buffer to Cloudinary (Authenticated)
+- `POST /api/pulses/cleanup-assets` - Clean up discarded session assets from Cloudinary (Authenticated)
+- `GET /api/pulses/:id/comments` - Retrieve nested discussion tree ($O(N)$ tree structure)
+- `POST /api/pulses/:id/comments` - Post root comment or nested reply up to 4 levels (Authenticated)
+- `DELETE /api/pulses/:id/comments/:commentId` - Delete comment with Reddit graceful masking (Author or Admin)
+- `POST /api/pulses/:id/comments/:commentId/vote` - Upvote / Downvote a comment (Authenticated)
 
 ## 🔒 Security & Performance Features
 

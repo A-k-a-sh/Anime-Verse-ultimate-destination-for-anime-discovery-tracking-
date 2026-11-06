@@ -12,18 +12,19 @@
 **GitHub Repository:** https://github.com/cross-entropy0/Anime-Verse-ultimate-destination-for-anime-discovery-tracking-
 
 ### Project Overview
-AnimeVerse is a comprehensive full-stack web application that allows users to discover, track, and manage their anime and manga collections. The platform integrates with the AniList GraphQL API v2 to provide rich anime/manga metadata while implementing an intelligent database-first caching strategy with automated write-through fallback to optimize performance (< 15ms response times) and ensure resilient, uninterrupted user experiences.
+AnimeVerse is a comprehensive full-stack web application that allows users to discover, stream, read, track, and discuss anime and manga collections. The platform integrates with the AniList GraphQL API v2 to provide rich anime/manga metadata while implementing an intelligent database-first caching strategy with automated write-through fallback to optimize performance (< 15ms response times). It features an embedded dual-server anime video player, an ad-free in-platform manga reader, and **Otaku Pulse ⚡** — a complete community blogging, rich-text authoring, and nested discussion engine with spoiler protection and Cloudinary media streaming.
 
 ---
 
 ## 🎯 Project Objectives
 
 ### Primary Goals
-1. **Content Discovery:** Enable users to browse, search, and discover anime and manga content
-2. **Personal Tracking:** Provide watchlist/reading list functionality with status tracking
-3. **Rich Information:** Display comprehensive details including characters, reviews, recommendations
-4. **Responsive Design:** Create a modern, mobile-first user interface
-5. **Performance Optimization:** Implement caching and rate limiting for API efficiency
+1. **Content Discovery & Streaming:** Enable users to browse, search, and discover anime and manga content with embedded video streaming and native multi-mode manga reading
+2. **Community Expression & Discussions:** Provide a full-featured blogging and discussion platform (**Otaku Pulse ⚡**) with rich-text authoring, custom anime spoiler masks, and Reddit-style nested discussion trees
+3. **Personal Tracking:** Provide unified watchlist and reading list functionality with deliberate-choice progress synchronization
+4. **Rich Information:** Display comprehensive details including characters, voice actors, production staff, reviews, and catalog cross-links
+5. **Responsive Design:** Create a modern, mobile-first dark-mode user interface with fluid animations
+6. **Performance & Media Optimization:** Implement database-first caching, zero-storage manga streaming, and smart Cloudinary orphan media reconciliation
 
 ### Learning Outcomes
 - Full-stack MERN development
@@ -43,36 +44,37 @@ AnimeVerse is a comprehensive full-stack web application that allows users to di
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                        CLIENT LAYER                          │
-│  React.js + Vite + Tailwind CSS + Framer Motion            │
+│  React.js 19 + Vite 7 + Tailwind CSS + TipTap Rich Text     │
 │  (Frontend SPA running on port 5173)                        │
 └──────────────────┬──────────────────────────────────────────┘
                    │ HTTP/REST API
-                   │ (JSON)
+                   │ (JSON & Multipart Form-Data)
 ┌──────────────────▼──────────────────────────────────────────┐
 │                      SERVER LAYER                            │
 │  Express.js + Node.js (Backend API on port 3000)           │
 │  ┌──────────────────────────────────────────────────────┐  │
-│  │  Routes → Controllers → Services → External API      │  │
-│  │  (Authentication, Rate Limiting, Error Handling)     │  │
+│  │  Routes → Controllers → Services → External APIs     │  │
+│  │  (Auth, Rate Limiting, Cloudinary Stream, Proxy)     │  │
 │  └──────────────────────────────────────────────────────┘  │
-└──────────────────┬──────────────────────────────────────────┘
-                   │
-         ┌─────────┴─────────┐
-         │                   │
-┌────────▼─────────┐  ┌─────▼────────────────┐
-│   DATABASE       │  │   EXTERNAL API       │
-│   MongoDB        │  │   AniList API v2     │
-│   (Local/Atlas)  │  │   (GraphQL Client)   │
-└──────────────────┘  └──────────────────────┘
+└──────┬───────────────────────┬───────────────────────┬──────┘
+       │                       │                       │
+┌──────▼───────────┐  ┌────────▼───────────┐  ┌────────▼───────────┐
+│   DATABASE       │  │   EXTERNAL API     │  │   MEDIA CDN        │
+│   MongoDB        │  │   AniList API v2   │  │   Cloudinary       │
+│   (Local/Atlas)  │  │   (GraphQL Client) │  │   (Stream & Prune) │
+└──────────────────┘  └────────────────────┘  └────────────────────┘
 ```
 
 ### Technology Stack Details
 
 #### Frontend (React 19 + Vite 7)
 - **React 19.2.0** - Modern React UI component library with concurrent features
-- **React Router 7.9.6** - Client-side routing with split landing/home routes
-- **Vite 7.2.4** - High-performance next-generation frontend build tool (< 2.5s production bundling)
+- **React Router 7.9.6** - Client-side routing with split landing/home routes and Otaku Pulse blog routes
+- **Vite 7.2.4** - High-performance next-generation frontend build tool (< 3.0s production bundling)
 - **Tailwind CSS 3.4.17** - Utility-first CSS framework with custom dark theme, glassmorphic blur, and neon glow presets
+- **TipTap Rich Text Suite** (`@tiptap/react`, `@tiptap/starter-kit`, `@tiptap/pm`, `@tiptap/extension-image`, `@tiptap/extension-youtube`) - Headless rich text editor with custom Anime Spoiler extension
+- **DOMPurify 3.3.1** - Ultra-fast XSS sanitizer for safe HTML rendering across blog posts and comments
+- **@tailwindcss/typography** - Beautiful prose styles for markdown and rich-text blogs
 - **Framer Motion 12.23.24** - Motion library for layout animations, Ken-Burns crossfades, and parallax scroll transforms
 - **Axios 1.13.2** - HTTP client with request deduplication and in-memory caching
 - **Heroicons 2.2.0** - Modern SVG iconography library
@@ -82,16 +84,20 @@ AnimeVerse is a comprehensive full-stack web application that allows users to di
 - **Express 4.21.2** - Web application framework
 - **MongoDB 6.12.0** - NoSQL database driver
 - **Mongoose 8.9.0** - MongoDB ODM
+- **Cloudinary SDK 2.11.0** - Cloud media management for stream upload and smart background orphan asset pruning
+- **Multer 2.5.0** - Memory-buffer file upload middleware for direct streaming
 - **JWT (jsonwebtoken 9.0.2)** - Authentication tokens
 - **bcryptjs 2.4.3** - Password hashing
 - **cors 2.8.5** - Cross-origin resource sharing
 - **express-rate-limit 7.5.0** - Rate limiting middleware
+- **helmet 7.1.0** - Security headers
 
 #### External APIs & Providers
 - **AniList GraphQL API v2** - Modern, official GraphQL API for Anime, Manga, and Characters
   - Endpoint: https://graphql.anilist.co
   - Rate Limit: 90 requests/minute
   - Capability: Single-request nested relational fetching (details + cast + staff + relations in 1 call)
+- **Cloudinary Media CDN** - Fast, optimized image hosting with automated format transformation, secure uploads, and orphan asset pruning
 - **MangaDex REST API** - Official manga scanlation & metadata provider
   - Endpoint: https://api.mangadex.org
   - Delivery: MangaDex@Home distributed image CDN
@@ -263,11 +269,75 @@ AnimeVerse is a comprehensive full-stack web application that allows users to di
 // TTL auto-expiry index: { createdAt: 1 }, expireAfterSeconds: 604800
 ```
 
+### 8. Pulse Schema (`pulses`)
+```javascript
+{
+  title: String (required, trim, max: 180),
+  slug: String (required, unique, indexed, lowercase),
+  excerpt: String (trim, max: 320),
+  content: String (required, rich-text HTML),
+  coverImage: {
+    url: String,
+    publicId: String
+  },
+  author: ObjectId (ref: 'User', required, indexed),
+  tags: [String] (lowercase, indexed),
+  relatedMedia: [
+    {
+      mediaId: Number (required),
+      mediaType: String (enum: ['anime', 'manga'], required),
+      title: String,
+      coverImage: String
+    }
+  ],
+  hasSpoilers: Boolean (default: false),
+  commentsEnabled: Boolean (default: true),
+  readingTimeMinutes: Number (default: 1),
+  status: String (enum: ['draft', 'published'], default: 'published', indexed),
+  views: Number (default: 0),
+  pulseScore: Number (default: 0, indexed),
+  upvotes: [ObjectId (ref: 'User')],
+  downvotes: [ObjectId (ref: 'User')],
+  createdAt: Date,
+  updatedAt: Date
+}
+// Unique index: { slug: 1 }
+// Compound indexes:
+//   { status: 1, pulseScore: -1, createdAt: -1 } (Feed ranking)
+//   { author: 1, status: 1, updatedAt: -1 } (Author dashboard)
+//   { 'relatedMedia.mediaId': 1, status: 1 } (Catalog cross-linking)
+//   { tags: 1, status: 1 } (Tag filtering)
+```
+
+### 9. PulseComment Schema (`pulsecomments`)
+```javascript
+{
+  pulseId: ObjectId (ref: 'Pulse', required, indexed),
+  author: ObjectId (ref: 'User', required),
+  parentId: ObjectId (ref: 'PulseComment', default: null, indexed),
+  content: String (required, max: 2000),
+  depth: Number (default: 0, min: 0, max: 4),
+  pulseScore: Number (default: 0),
+  upvotes: [ObjectId (ref: 'User')],
+  downvotes: [ObjectId (ref: 'User')],
+  isDeleted: Boolean (default: false),
+  createdAt: Date,
+  updatedAt: Date
+}
+// Compound indexes:
+//   { pulseId: 1, parentId: 1, createdAt: 1 }
+//   { pulseId: 1, pulseScore: -1, createdAt: 1 }
+```
+
 ### Indexing Strategy
 - **malId**: Indexed in all cache collections (`Anime`, `Manga`, `MangaChapterIndex`) for fast lookups (< 15ms)
 - **userId + malId**: Compound unique index in Watchlist for data integrity
 - **mangaId + chapter**: Compound index in `MangaChapterPages` for instant page retrieval
 - **createdAt (TTL)**: MongoDB auto-expiring index (7-day time-to-live) in `MangaChapterPages` for zero-maintenance cache cleanup
+- **slug**: Unique index on `Pulse` for instantaneous reader lookup by URL slug
+- **status + pulseScore + createdAt**: Compound index on `Pulse` powering Trending, Top, and Latest feed queries
+- **author + status**: Compound index on `Pulse` for author's private draft and published dashboard tabs
+- **pulseId + parentId**: Compound index on `PulseComment` enabling linear O(N) nested tree assembly
 - **status**: Indexed in Watchlist for efficient filtering
 - **lastUpdated**: Used for 24-hour revalidation in `MangaChapterIndex`
 
@@ -331,11 +401,29 @@ AnimeVerse is a comprehensive full-stack web application that allows users to di
 | GET | `/:id/anime` | Get anime appearances | No |
 | GET | `/:id/pictures` | Get character pictures | No |
 
+### Otaku Pulse Routes (`/api/pulses`)
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/` | Get pulses feed with sort/tag/search filters | No |
+| POST | `/` | Create a new Pulse or save draft | Yes |
+| GET | `/:slug` | Get pulse by slug for public reader (increments views) | No |
+| GET | `/id/:id` | Get pulse by Mongo ID for author studio | Yes |
+| PUT | `/:id` | Update pulse and reconcile media assets | Yes (Author) |
+| DELETE | `/:id` | Delete pulse and purge associated Cloudinary assets | Yes (Author/Admin) |
+| POST | `/:id/vote` | Atomic upvote / downvote on a pulse | Yes |
+| PATCH | `/:id/toggle-comments` | Enable or disable discussions on a pulse | Yes (Author/Admin) |
+| POST | `/upload-image` | Upload image buffer directly to Cloudinary CDN | Yes |
+| POST | `/cleanup-assets` | Clean up uncommitted/discarded draft uploads | Yes |
+| GET | `/:id/comments` | Retrieve nested discussion tree (O(N) tree builder) | No |
+| POST | `/:id/comments` | Post root comment or nested reply (depth up to 4) | Yes |
+| DELETE | `/:id/comments/:commentId` | Delete comment with Reddit-style graceful masking | Yes (Author/Admin) |
+| POST | `/:id/comments/:commentId/vote` | Atomic upvote / downvote on a comment | Yes |
+
 ---
 
 ## 🎨 Frontend Architecture
 
-### Page Structure (20+ Pages)
+### Page Structure (25+ Pages)
 
 #### Public Pages
 1. **Cinematic Landing Page (`/`)** - Multi-scene 4K Sakuga video hero showcase, live UI mockups, feature comparison matrix, and deep anime background scenery with parallax scrolling
@@ -344,25 +432,39 @@ AnimeVerse is a comprehensive full-stack web application that allows users to di
 4. **Browse Manga (`/manga`)** - Manga discovery page with 46-genre filter and 18+ adult scope toggles
 5. **Anime Details (`/anime/:id`)** - Comprehensive anime metadata, voice actors, staff, reviews, and dynamic "Watch" CTAs
 6. **Watch Page (`/watch/:id/:episode?`)** - Embedded streaming video player with dual servers, theater & cinema modes, interactive episode selector, progress sync, and 18+ adult warning notice
-7. **Manga Details (`/manga/:id`)** - Detailed manga overview, chapter/volume statistics, and author credits
+7. **Manga Details (`/manga/:id`)** - Detailed manga overview, chapter/volume statistics, author credits, and related community Pulses
 8. **Character Details (`/character/:id`)** - Character biography, high-resolution artwork gallery, and anime appearances
 9. **Search Results (`/search`)** - Unified live search for anime and manga with query-matched tab titles
 10. **Seasonal Hub (`/seasonal`)** - Seasonal archives and upcoming releases with reactive tab title updating
 11. **Random Discovery (`/random`)** - Instant randomized anime suggestions with rolling dice animations
-12. **Login (`/login`)** - User authentication
-13. **Register (`/register`)** - New user registration
+12. **Otaku Pulse Community Feed (`/pulse`)** - Public community blogging hub with Hero spotlight carousel, tag filter rail, sort tabs (Trending, Top, Latest), real-time search, and reading times
+13. **Otaku Pulse Reader (`/pulse/:slug`)** - Immersive reader experience with DOMPurify sanitization, interactive Anime Spoiler mask click-to-reveal, author bio card, social share, voting widget, and threaded discussions
+14. **Login (`/login`)** - User authentication
+15. **Register (`/register`)** - New user registration
 
 #### Protected Pages (Authentication Required)
-14. **Dashboard (`/dashboard`)** - User overview with tracking statistics and distribution charts
-15. **Watchlist (`/watchlist`)** - Personal anime/manga tracking library with progress sync
-16. **Profile (`/profile`)** - User settings, avatar customization, and viewing history
+16. **Dashboard (`/dashboard`)** - User overview with tracking statistics and distribution charts
+17. **Watchlist (`/watchlist`)** - Personal anime/manga tracking library with progress sync
+18. **Profile (`/profile`)** - User settings, avatar customization, and viewing history
+19. **Pulse Studio (`/pulse/write`, `/pulse/edit/:id`)** - Headless TipTap rich text studio with custom Anime Spoiler extension, sticky toolbar, bubble menu, slash `/` commands, Cloudinary cover drag-and-drop, and 5-second `localStorage` draft protection
+20. **My Pulses Dashboard (`/pulse/my-pulses`)** - Author management hub with status filtering (All, Published, Drafts), comment locking toggles, edit shortcuts, and article deletion
 
 ### Component Architecture
 
-#### Reusable Components (25+ Components)
-- **Navbar (Option B: Floating Island Capsule)** - Floating glass pill navigation with dynamic backdrop blur (`backdrop-blur-2xl`), rich mega-card dropdowns with icons, global `⌘K` shortcut live search, dice shortcut, and authenticated user card
+#### Reusable Components (35+ Components)
+- **Navbar (Option B: Floating Island Capsule)** - Floating glass pill navigation with dynamic backdrop blur (`backdrop-blur-2xl`), rich mega-card dropdowns with icons, `⚡ Otaku Pulse` pills, global `⌘K` shortcut live search, dice shortcut, and authenticated user card
 - **CollapsibleGenreFilter** - Reusable 46-genre filter component with popular pills upfront, smooth expand/collapse toggle, and auto-expansion on niche genres
 - **TitleManager** - Centralized route listener that automatically synchronizes browser tab `<title>` on route navigation
+- **TipTapStudio** - Container for rich text editing, file upload listeners, and autosave syncing
+- **StickyToolbar** - Fixed formatting toolbar with reactive mark toggling and video/image inserters
+- **EditorBubbleMenu** - Floating selection menu for formatting highlights without mouse travel
+- **SlashCommandMenu** - Notion-style slash `/` command quick insertion menu with dynamic cursor positioning
+- **PulseVoting** - Reddit-style upvote/downvote widget with optimistic count updates
+- **PulseCommentSection** - Threaded discussion tree manager with collapse toggles and lock indicators
+- **PulseCommentItem** - Recursive comment renderer with depth limiters and graceful deletion masks
+- **PulseCard** - Rich article preview card with author byline, spoiler tags, read times, and voting
+- **PulseHeroSpotlight** - Animated gradient spotlight banner showcasing top community pulses
+- **RelatedPulsesSection** - Catalog cross-linking section embedded in anime and manga details pages
 - **Footer** - Site information and links
 - **VideoPlayer** - Embedded video stream wrapper with unified postMessage router, container fullscreen sync, and failover banner
 - **ServerSwitcher** - Server 1 (MegaPlay) vs Server 2 (Zoko) selector with Sub/Dub/HSub audio tracks
@@ -768,6 +870,53 @@ Desktop: 4-5 columns
 
 ---
 
+### 14. Otaku Pulse ⚡ Community Blogging & Discussion Platform
+
+**Objective:** Deliver an expansive, creator-first blogging and community discussion ecosystem where anime and manga fans can publish long-form essays, episodic theories, seasonal reviews, and tier lists with interactive spoiler protection, multimedia streaming, and Reddit-style nested discussion trees.  
+**Solution:** A headless TipTap rich-text studio (`TipTapStudio`), custom Anime Spoiler mark extension, smart Cloudinary media streaming pipeline with background orphan pruning, Reddit-style compound voting engine, $O(N)$ nested comment tree builder, author management dashboard, and two-way catalog cross-linking.
+
+#### 1. Headless TipTap Studio & Interactive Spoiler Extension (`/pulse/write`, `/pulse/edit/:id`)
+- **Extensible Headless Architecture:** Built on `@tiptap/react` and ProseMirror with `@tiptap/starter-kit`, Image, Link, YouTube, and Placeholder extensions.
+- **Custom Anime Spoiler Mark (`SpoilerMark.js`):**
+  - Custom TipTap mark rendering `<span data-spoiler="true" class="anime-spoiler-blur">`.
+  - Unrevealed spoilers render with `filter: blur(8px)`, low opacity, and selection prevention (`user-select: none`).
+  - Interactive click listener dynamically toggles `.revealed` with smooth CSS transitions (`filter: blur(0)`), allowing readers to safely consume articles without accidental plot leaks.
+- **Authoring Tooling Suite:**
+  - **Sticky Top Toolbar (`StickyToolbar.jsx`):** Fixed formatting controls with synchronized transaction listening (`editor.on('transaction')`) ensuring active marks (Bold, Italic, Headings, Spoiler, Code) reflect state immediately.
+  - **Floating Bubble Menu (`BubbleMenu.jsx`):** Floats above text selections for zero-travel formatting highlights.
+  - **Slash Command Quick Menu (`SlashCommandMenu.jsx`):** Notion-style command palette triggered by typing `/`. Calculates dynamic cursor coordinates via `editor.view.coordsAtPos($from.pos)` with viewport boundary overflow detection and capturing-phase keydown interception (`{ capture: true }`) for instant formatting application.
+  - **Autosave Protection:** 5-second interval synchronizes draft state to `localStorage`, safely restoring content, title, tags, and uploaded media upon page reloads.
+
+#### 2. Smart Cloudinary Media Pipeline & Orphan Asset Pruning
+- **Direct Memory Streaming:** Multer memory buffer streams uploaded images directly to Cloudinary (`animeverse/pulses/`) without writing temporary files to server disk.
+- **Safe Undo/Redo & Immediate Previews:** Inline images and cover banners upload immediately upon selection, providing immediate previews and short URLs that fit safely into `localStorage` (preventing 5MB quota crashes).
+- **Publish-Time Reconciliation (Approach B):**
+  - Maintains `sessionUploadedAssetsRef` tracking every asset public ID generated in the authoring session.
+  - On **Publish** or **Update**, the backend parses the final HTML content via `extractCloudinaryPublicIds(html)` and compares them against the session uploads.
+  - Any asset removed with <kbd>Backspace</kbd> or banner removal is safely identified as an orphan and deleted from Cloudinary in the background (`deleteMultipleImages(orphanIds)`).
+  - On **Clear Draft**, uncommitted uploads are purged via `POST /api/pulses/cleanup-assets`.
+  - On **Post Deletion**, all inline images in `pulse.content` and the cover image are completely removed from Cloudinary.
+
+#### 3. Reddit-Style Atomic Voting Engine
+- **Compound Score (`pulseScore = upvotes - downvotes`):**
+  - Atomic transition handling prevents duplicate voting or desynchronization.
+  - Clicking an active vote removes the vote (toggle off); switching votes (e.g. up $\rightarrow$ down) atomically decrements the score by 2.
+- **Optimistic UI Updates:** `PulseVoting.jsx` reflects score and arrow highlights instantaneously while dispatching background API requests, automatically rolling back on network errors.
+
+#### 4. Threaded Discussion Trees & Reddit-Style Graceful Deletion
+- **Linear $O(N)$ Tree Builder (`commentTree.js`):** Transforms flat MongoDB comment arrays into recursive reply trees (up to 4 levels) in a single linear pass with map lookups, mapping user vote states and stripping sensitive ObjectId arrays.
+- **Graceful Deletion Masking:**
+  - If a user deletes a comment that has child replies, the comment content is masked to `"[This comment has been deleted by author]"` and the author username is sanitized to `"[deleted]"`.
+  - Preserves thread context and nested replies, matching Reddit's discussion model.
+  - If a deleted leaf comment has 0 replies, it is permanently pruned.
+
+#### 5. Two-Way Catalog Integration & Community Discovery
+- **Public Feed (`/pulse`):** Top/trending Hero spotlight banner, multi-tag filtering, sort tabs (Trending, Top, Latest), real-time search, and automated reading time computation ($words / 200\text{ wpm}$).
+- **Catalog Cross-Linking (`RelatedPulsesSection.jsx`):** Embedded directly on `AnimeDetails.jsx` and `MangaDetails.jsx`, querying community pulses related to the current media item and providing a "Write a Pulse about this Anime" CTA with pre-filled tags.
+- **Admin Moderation Guardrails:** Platform admins (`ADMIN_EMAILS`) can delete rule-breaking Pulses or lock discussions via `verifyPulseAuthorOrAdmin`, but are strictly blocked from editing another user's content (`verifyPulseAuthorOnly`).
+
+---
+
 ## 🎨 UI/UX Design Principles
 
 ### Design System
@@ -982,6 +1131,20 @@ width: Math.min(
 - If a title does not already exist in the user's Watchlist, the server updates local reading history (`readStorage.js`) and chapter bookmarks without creating an unwanted database document.
 - Only when the user deliberately clicks "Add to List" does the manga enter their personal library, preserving user trust and data integrity.
 
+### Challenge 16: TipTap Studio Cursor Coords, Keyboard Traps, and Cloudinary Smart Orphan Cleanup
+**Problem:** In the Otaku Pulse authoring studio, several subtle technical challenges arose:
+1. **Slash Command Positioning & Keyboard Collision:** Hardcoded positioning placed the slash command menu at the screen edges rather than adjacent to the cursor. When pressing <kbd>Enter</kbd> to apply an item, ProseMirror's default keymap intercepted the event, creating a newline before the command menu could execute.
+2. **Toolbar Mark Toggle Reactivity:** Toggling an active formatting mark (e.g. Bold or Italic) without text selected changed ProseMirror's stored marks, but did not update React component state, leaving the toolbar icon highlighted until typed text appeared.
+3. **Cloudinary Orphan Storage Bloat:** Uploading images immediately upon selection allowed instant previews and safe draft autosaving, but if an author hit <kbd>Backspace</kbd> or replaced a banner, the discarded asset remained in Cloudinary indefinitely. Deleting a post also left all inline content images orphaned.
+**Solution:**
+- **Dynamic ProseMirror Coordinates:** Positioned `SlashCommandMenu.jsx` dynamically using `editor.view.coordsAtPos($from.pos)` with screen boundary overflow detection (flipping above cursor if overflowing the bottom viewport).
+- **Capturing-Phase Keydown Interception:** Registered keydown listener using `{ capture: true }` with `e.preventDefault()` and `e.stopPropagation()`, ensuring <kbd>Enter</kbd> executes the slash command before ProseMirror inserts a newline.
+- **Synchronous Transaction Subscription:** Added state tick listener on `editor.on('transaction')` and `editor.on('selectionUpdate')` in `StickyToolbar.jsx` and `BubbleMenu.jsx`, guaranteeing instantaneous button toggle re-renders.
+- **Smart Orphan Reconciliation (Approach B):**
+  - Studio tracks all uploaded `publicId`s during an author's session (`sessionUploadedAssetsRef`).
+  - On Publish / Update, backend helper `extractCloudinaryPublicIds(html)` extracts active IDs from the final content body and cover banner, computing the difference and purging unreferenced assets in the background (`deleteMultipleImages(orphanIds)`).
+  - On Post Deletion, `deletePulse` parses all embedded inline images in `pulse.content` and purges both the cover and all content images from Cloudinary.
+
 ---
 
 ## 📊 Performance Metrics
@@ -1056,6 +1219,19 @@ width: Math.min(
 | Search | Empty query | ✅ All results shown |
 | Cache | Data older than 2 hours | ✅ Refreshed from API |
 | Rate Limit | 100+ requests/minute | ✅ Blocked with 429 |
+| Otaku Pulse | Author publish with backspaced inline image | ✅ Discarded image pruned from Cloudinary |
+| Otaku Pulse | Author deletes comment with active replies | ✅ Masked as "[deleted]" preserving child tree |
+| Otaku Pulse | Non-author attempts editing another author's pulse | ❌ Blocked with 403 Forbidden |
+| Otaku Pulse | Admin deletes rule-breaking pulse | ✅ Pulse and all Cloudinary assets deleted |
+
+### Automated Smoke Test Suite (`pulseSmokeTest.js`)
+A dedicated automated backend testing harness wired to `npm test` in `/Backend` covering critical business logic:
+- **Test 1:** Comment Tree O(N) recursive builder, user vote mapping (`up`, `down`, `null`), and Reddit-style graceful deletion masking.
+- **Test 2:** Mongoose `Pulse` schema constraint validation, default values, and status enums.
+- **Test 3:** Mongoose `PulseComment` hierarchy validation and maximum depth constraints (0 to 4).
+- **Test 4:** Word count and reading time algorithm computation ($words / 200\text{ wpm}$ with 1-min baseline).
+- **Test 5:** Cloudinary media service module loading and interface exports.
+- **Test 6:** Smart orphan media extraction regex and diff reconciliation algorithm.
 
 ---
 
@@ -1122,6 +1298,16 @@ PORT=3000
 NODE_ENV=development
 ANILIST_API_URL=https://graphql.anilist.co
 FRONTEND_URL=http://localhost:5173
+
+# Cloudinary Media Pipeline (Otaku Pulse)
+CLOUDINARY_URL=cloudinary://<api_key>:<api_secret>@<cloud_name>
+# Or discrete variables:
+# CLOUDINARY_CLOUD_NAME=your_cloud_name
+# CLOUDINARY_API_KEY=your_api_key
+# CLOUDINARY_API_SECRET=your_api_secret
+
+# Admin Access Controls (comma-separated email list)
+ADMIN_EMAILS=admin@animeverse.com
 ```
 
 **Frontend (.env):**
@@ -1152,8 +1338,8 @@ VITE_API_URL=http://localhost:3000/api
 ### Phase 3 - Content Expansion
 - [x] Dual-Server Embedded Video Streaming Player (MegaPlay & ZokoAnime with custom player, theater mode, cinema mode, and episode selector)
 - [x] Native In-Platform Manga Reader (Multi-source waterfall with MangaDex & MangaPill fallback, zero-storage streaming proxy, Webtoon/Single/Double reading modes, and deliberate choice tracking)
-- [ ] News and articles section
-- [ ] Forum/community discussions
+- [x] News and articles section (Otaku Pulse ⚡ Community Hub, Headless TipTap Studio, Cloudinary Media Stream)
+- [x] Forum/community discussions (Nested Reddit-style threaded discussions with spoiler protection and atomic score voting)
 - [ ] User-generated lists (top 10s, thematic)
 - [ ] Seasonal anime tracker with countdowns
 
@@ -1253,11 +1439,11 @@ The application serves as a comprehensive learning experience in full-stack deve
 - Responsive UI/UX design
 
 ### Project Statistics
-- **Total Lines of Code:** ~15,000+
-- **Components:** 15+ reusable React components
-- **Pages:** 20+ routes
-- **API Endpoints:** 40+ endpoints
-- **Database Collections:** 5 collections
+- **Total Lines of Code:** ~20,000+
+- **Components:** 35+ reusable React components
+- **Pages:** 25+ routes
+- **API Endpoints:** 55+ endpoints
+- **Database Collections:** 7 collections (Users, Anime, Manga, Watchlist, MangaChapterIndex, Pulses, PulseComments)
 - **Development Time:** [Your duration]
 - **Commits:** [Check with `git log --oneline | wc -l`]
 
