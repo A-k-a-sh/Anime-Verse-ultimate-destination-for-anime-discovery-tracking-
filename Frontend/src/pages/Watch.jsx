@@ -260,6 +260,10 @@ const Watch = () => {
   const handleServerChange = (server) => {
     setActiveServer(server);
     watchStorage.setServerPreference(server);
+    if (server !== 'server2' && track === 'hsub') {
+      setTrack('sub');
+      watchStorage.setTrackPreference('sub');
+    }
   };
 
   const handleTrackChange = (newTrack) => {
@@ -329,7 +333,15 @@ const Watch = () => {
           break;
         case 's':
           e.preventDefault();
-          handleServerChange(activeServer === 'server1' ? 'server2' : 'server1');
+          {
+            const serverCycle = {
+              server1: 'server2',
+              server2: 'server3',
+              server3: 'server4',
+              server4: 'server1',
+            };
+            handleServerChange(serverCycle[activeServer] || 'server1');
+          }
           break;
         case 't':
           e.preventDefault();

@@ -8,8 +8,14 @@ import {
 
 /**
  * Multi-Server Video Player Iframe Component
- * Supports MegaPlay (Server 1) and ZokoAnime (Server 2) with postMessage events
- * and container-level fullscreen management.
+ * Supports:
+ * - Server 1: MegaPlay (megaplay.buzz)
+ * - Server 2: ZokoAnime (zokoanime.video)
+ * - Server 3: VidLink (vidlink.pro)
+ * - Server 4: AnimeEmbed (animeembed.com)
+ *
+ * Implements calibrated iframe sandboxing to block popup ads/new tabs
+ * while preserving HLS video playback, MSE, Blob URLs, and container fullscreen.
  */
 const VideoPlayer = ({
   malId,
@@ -35,17 +41,29 @@ const VideoPlayer = ({
   const getStreamUrl = () => {
     const ep = Math.max(1, parseInt(currentEpisode, 10) || 1);
     const id = parseInt(malId, 10);
+    const lang = track === 'dub' ? 'dub' : 'sub';
 
-    if (activeServer === 'server1') {
-      // Server 1: MegaPlay (megaplay.buzz) - Primary / Default
-      // Language must be 'sub' or 'dub' (fallback hsub to sub)
-      const lang = track === 'dub' ? 'dub' : 'sub';
-      return `https://megaplay.buzz/stream/mal/${id}/${ep}/${lang}`;
-    } else {
-      // Server 2: ZokoAnime (zokoanime.video) - Alternate with Auto-Skip & Custom Accent
-      const asiParam = autoSkip ? 1 : 0;
-      const autoNextParam = autoNext ? 1 : 0;
-      return `https://zokoanime.video/stream/mal/${id}/${ep}/${track}?color=8B5CF6&autoplay=1&asi=${asiParam}&autonext=${autoNextParam}`;
+    switch (activeServer) {
+      case 'server1':
+        // Server 1: MegaPlay (megaplay.buzz) - Primary / Default HLS
+        return `https://megaplay.buzz/stream/mal/${id}/${ep}/${lang}`;
+
+      case 'server2':
+        // Server 2: ZokoAnime (zokoanime.video) - Auto-Skip & Custom Accent
+        const asiParam = autoSkip ? 1 : 0;
+        const autoNextParam = autoNext ? 1 : 0;
+        return `https://zokoanime.video/stream/mal/${id}/${ep}/${track}?color=8B5CF6&autoplay=1&asi=${asiParam}&autonext=${autoNextParam}`;
+
+      case 'server3':
+        // Server 3: VidLink (vidlink.pro) - Fast, low-ad MAL stream with purple accent & sub/dub fallback
+        return `https://vidlink.pro/anime/${id}/${ep}/${lang}?primaryColor=8B5CF6&fallback=true`;
+
+      case 'server4':
+        // Server 4: AnimeEmbed (animeembed.com) - Unbranded developer embed with custom accent
+        return `https://animeembed.com/embed/mal/${id}/${ep}?track=${lang}&accent=8B5CF6`;
+
+      default:
+        return `https://megaplay.buzz/stream/mal/${id}/${ep}/${lang}`;
     }
   };
 
@@ -79,10 +97,15 @@ const VideoPlayer = ({
     };
   }, [activeServer, containerRef]);
 
-  // Unified postMessage listener for Server 1 & Server 2
+  // Unified postMessage listener for Server 1, Server 2, Server 3 & Server 4
   useEffect(() => {
     const handleMessage = (event) => {
-      const allowedOrigins = ['https://zokoanime.video', 'https://megaplay.buzz'];
+      const allowedOrigins = [
+        'https://zokoanime.video',
+        'https://megaplay.buzz',
+        'https://vidlink.pro',
+        'https://animeembed.com',
+      ];
       if (!allowedOrigins.includes(event.origin)) return;
 
       let msg = event.data;
@@ -147,6 +170,21 @@ const VideoPlayer = ({
           setErrorMessage('Playback error reported on Server 1 (MegaPlay)');
         }
       }
+
+      // Handle Server 4 (AnimeEmbed)
+      if (msg.channel === 'animeembed') {
+        if (msg.event === 'progress' && msg.data) {
+          onProgress?.(msg.data.currentTime, msg.data.duration);
+        }
+        if (msg.event === 'ended') {
+          onEpisodeComplete?.();
+        }
+        if (msg.event === 'error') {
+          console.warn('[AnimeEmbed error]', msg);
+          setHasError(true);
+          setErrorMessage('Playback error reported on Server 4 (AnimeEmbed)');
+        }
+      }
     };
 
     window.addEventListener('message', handleMessage);
@@ -169,9 +207,22 @@ const VideoPlayer = ({
     setIframeKey((prev) => prev + 1);
   };
 
-  const alternateServer = activeServer === 'server1' ? 'server2' : 'server1';
-  const alternateServerLabel =
-    activeServer === 'server1' ? 'Server 2 (Zoko)' : 'Server 1 (MegaPlay)';
+  const serverLabels = {
+    server1: 'Server 1 (MegaPlay)',
+    server2: 'Server 2 (Zoko)',
+    server3: 'Server 3 (VidLink)',
+    server4: 'Server 4 (AnimeEmbed)',
+  };
+
+  const serverCycle = {
+    server1: 'server3',
+    server2: 'server3',
+    server3: 'server4',
+    server4: 'server1',
+  };
+
+  const alternateServer = serverCycle[activeServer] || 'server1';
+  const alternateServerLabel = serverLabels[alternateServer] || 'Server 1 (MegaPlay)';
 
   const lightsClass = isLightsOff
     ? 'z-[70] shadow-[0_0_80px_rgba(139,92,246,0.55)] ring-1 ring-white/20'
@@ -192,7 +243,7 @@ const VideoPlayer = ({
           <div className="flex items-center gap-2">
             <ExclamationTriangleIcon className="w-5 h-5 text-red-400 shrink-0" />
             <span>
-              {errorMessage || `Streaming error on ${activeServer === 'server1' ? 'Server 1 (MegaPlay)' : 'Server 2 (Zoko)'}.`}
+              {errorMessage || `Streaming error on ${serverLabels[activeServer] || activeServer}.`}
             </span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -213,7 +264,7 @@ const VideoPlayer = ({
         </div>
       )}
 
-      {/* Embedded Stream Iframe */}
+      {/* Embedded Stream Iframe with Calibrated Sandbox Policy */}
       <iframe
         key={iframeKey}
         ref={iframeRef}
@@ -221,8 +272,9 @@ const VideoPlayer = ({
         title={`Episode ${currentEpisode} Player`}
         width="100%"
         height="100%"
-        allow="fullscreen; autoplay"
+        allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
         allowFullScreen
+        sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
         className="w-full h-full border-0 rounded-xl bg-black"
       />
 
@@ -244,4 +296,3 @@ const VideoPlayer = ({
 };
 
 export default VideoPlayer;
-
