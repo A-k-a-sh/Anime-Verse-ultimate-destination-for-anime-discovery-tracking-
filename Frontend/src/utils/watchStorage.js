@@ -99,14 +99,14 @@ export const watchStorage = {
   },
 
   /**
-   * Get server preference ('server1' | 'server2' | 'server3' | 'server4')
+   * Get server preference ('server1' | 'server2' | 'server3')
    * Default is 'server1' (MegaPlay)
-   * @returns {'server1' | 'server2' | 'server3' | 'server4'}
+   * @returns {'server1' | 'server2' | 'server3'}
    */
   getServerPreference: () => {
     try {
       const pref = localStorage.getItem(STORAGE_KEYS.SERVER_PREF);
-      return ['server1', 'server2', 'server3', 'server4'].includes(pref) ? pref : 'server1';
+      return ['server1', 'server2', 'server3'].includes(pref) ? pref : 'server1';
     } catch {
       return 'server1';
     }
@@ -114,11 +114,11 @@ export const watchStorage = {
 
   /**
    * Set server preference
-   * @param {'server1' | 'server2' | 'server3' | 'server4'} server
+   * @param {'server1' | 'server2' | 'server3'} server
    */
   setServerPreference: (server) => {
     try {
-      const valid = ['server1', 'server2', 'server3', 'server4'].includes(server) ? server : 'server1';
+      const valid = ['server1', 'server2', 'server3'].includes(server) ? server : 'server1';
       localStorage.setItem(STORAGE_KEYS.SERVER_PREF, valid);
     } catch (err) {
       console.warn('Failed to set server preference:', err);

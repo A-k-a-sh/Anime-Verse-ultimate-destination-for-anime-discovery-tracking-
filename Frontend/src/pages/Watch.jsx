@@ -337,8 +337,7 @@ const Watch = () => {
             const serverCycle = {
               server1: 'server2',
               server2: 'server3',
-              server3: 'server4',
-              server4: 'server1',
+              server3: 'server1',
             };
             handleServerChange(serverCycle[activeServer] || 'server1');
           }
@@ -480,6 +479,7 @@ const Watch = () => {
             <VideoPlayer
               containerRef={playerContainerRef}
               malId={id}
+              anilistId={anime?.anilistId || anime?.id}
               currentEpisode={currentEpisode}
               activeServer={activeServer}
               track={track}
@@ -651,6 +651,7 @@ const Watch = () => {
               <VideoPlayer
                 containerRef={playerContainerRef}
                 malId={id}
+                anilistId={anime?.anilistId || anime?.id}
                 currentEpisode={currentEpisode}
                 activeServer={activeServer}
                 track={track}

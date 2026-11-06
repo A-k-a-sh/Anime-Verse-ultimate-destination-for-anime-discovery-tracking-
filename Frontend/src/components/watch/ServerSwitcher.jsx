@@ -1,13 +1,15 @@
 import {
   BoltIcon,
   RocketLaunchIcon,
-  SparklesIcon,
   ShieldCheckIcon,
 } from '@heroicons/react/24/solid';
 
 /**
  * Server and Audio Track Switcher Component
- * Supports Server 1 (MegaPlay), Server 2 (Zoko), Server 3 (VidLink), and Server 4 (AnimeEmbed)
+ * Supports:
+ * - Server 1: MegaPlay (Primary HLS)
+ * - Server 2: Zoko (Auto-Skip Intro)
+ * - Server 3: AnimeEmbed (Clean unbranded player)
  */
 const ServerSwitcher = ({
   activeServer = 'server1',
@@ -36,21 +38,12 @@ const ServerSwitcher = ({
     },
     {
       id: 'server3',
-      name: 'Server 3 (VidLink)',
-      icon: SparklesIcon,
-      activeClass:
-        'bg-purple-600 text-white shadow-md shadow-purple-600/25 font-bold scale-[1.02]',
-      iconClass: 'text-purple-200',
-      title: 'Server 3: VidLink (Fast & Low Ads)',
-    },
-    {
-      id: 'server4',
-      name: 'Server 4 (AnimeEmbed)',
+      name: 'Server 3 (AnimeEmbed)',
       icon: ShieldCheckIcon,
       activeClass:
         'bg-emerald-600 text-white shadow-md shadow-emerald-600/25 font-bold scale-[1.02]',
       iconClass: 'text-emerald-200',
-      title: 'Server 4: AnimeEmbed (Clean Player)',
+      title: 'Server 3: AnimeEmbed (Clean Player)',
     },
   ];
 

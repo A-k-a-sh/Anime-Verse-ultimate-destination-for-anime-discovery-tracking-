@@ -9,13 +9,13 @@ import {
 /**
  * Multi-Server Video Player Iframe Component
  * Supports:
- * - Server 1: MegaPlay (megaplay.buzz)
- * - Server 2: ZokoAnime (zokoanime.video)
- * - Server 3: VidLink (vidlink.pro)
- * - Server 4: AnimeEmbed (animeembed.com)
+ * - Server 1: MegaPlay (megaplay.buzz) - High-speed default HLS stream
+ * - Server 2: ZokoAnime (zokoanime.video) - Auto-Skip intro support & custom accent
+ * - Server 3: AnimeEmbed (animeembed.com) - Clean unbranded player with AniList/MAL mapping
  */
 const VideoPlayer = ({
   malId,
+  anilistId,
   currentEpisode = 1,
   activeServer = 'server1',
   track = 'sub',
@@ -45,19 +45,19 @@ const VideoPlayer = ({
         // Server 1: MegaPlay (megaplay.buzz) - Primary / Default HLS
         return `https://megaplay.buzz/stream/mal/${id}/${ep}/${lang}`;
 
-      case 'server2':
+      case 'server2': {
         // Server 2: ZokoAnime (zokoanime.video) - Auto-Skip & Custom Accent
         const asiParam = autoSkip ? 1 : 0;
         const autoNextParam = autoNext ? 1 : 0;
         return `https://zokoanime.video/stream/mal/${id}/${ep}/${track}?color=8B5CF6&autoplay=1&asi=${asiParam}&autonext=${autoNextParam}`;
+      }
 
-      case 'server3':
-        // Server 3: VidLink (vidlink.pro) - Fast, low-ad MAL stream with purple accent & sub/dub fallback
-        return `https://vidlink.pro/anime/${id}/${ep}/${lang}?primaryColor=8B5CF6&fallback=true`;
-
-      case 'server4':
-        // Server 4: AnimeEmbed (animeembed.com) - Unbranded developer embed with custom accent
-        return `https://animeembed.com/embed/mal/${id}/${ep}?track=${lang}&accent=8B5CF6`;
+      case 'server3': {
+        // Server 3: AnimeEmbed (animeembed.com) - Clean unbranded developer embed
+        // Dynamically uses anilistId if available, fallback to malId
+        const aniId = anilistId || id;
+        return `https://animeembed.com/embed/ani/${aniId}/${ep}?track=${lang}&accent=8B5CF6`;
+      }
 
       default:
         return `https://megaplay.buzz/stream/mal/${id}/${ep}/${lang}`;
@@ -66,12 +66,12 @@ const VideoPlayer = ({
 
   const streamUrl = getStreamUrl();
 
-  // Reset error state when episode or server changes
+  // Reset error state when episode, server, or IDs change
   useEffect(() => {
     setHasError(false);
     setErrorMessage('');
     setIframeKey((prev) => prev + 1);
-  }, [malId, currentEpisode, activeServer, track]);
+  }, [malId, anilistId, currentEpisode, activeServer, track]);
 
   // Fullscreen sync listener
   useEffect(() => {
@@ -94,13 +94,12 @@ const VideoPlayer = ({
     };
   }, [activeServer, containerRef]);
 
-  // Unified postMessage listener for Server 1, Server 2, Server 3 & Server 4
+  // Unified postMessage listener for Server 1, Server 2 & Server 3
   useEffect(() => {
     const handleMessage = (event) => {
       const allowedOrigins = [
         'https://zokoanime.video',
         'https://megaplay.buzz',
-        'https://vidlink.pro',
         'https://animeembed.com',
       ];
       if (!allowedOrigins.includes(event.origin)) return;
@@ -146,7 +145,9 @@ const VideoPlayer = ({
           case 'error':
             console.warn('[ZokoAnime error]', msg);
             setHasError(true);
-            setErrorMessage(msg.message || 'Stream temporarily unavailable on Server 2 (Zoko)');
+            setErrorMessage(
+              msg.message || 'Stream temporarily unavailable on Server 2 (Zoko)'
+            );
             break;
           default:
             break;
@@ -168,7 +169,7 @@ const VideoPlayer = ({
         }
       }
 
-      // Handle Server 4 (AnimeEmbed)
+      // Handle Server 3 (AnimeEmbed)
       if (msg.channel === 'animeembed') {
         if (msg.event === 'progress' && msg.data) {
           onProgress?.(msg.data.currentTime, msg.data.duration);
@@ -179,7 +180,7 @@ const VideoPlayer = ({
         if (msg.event === 'error') {
           console.warn('[AnimeEmbed error]', msg);
           setHasError(true);
-          setErrorMessage('Playback error reported on Server 4 (AnimeEmbed)');
+          setErrorMessage('Playback error reported on Server 3 (AnimeEmbed)');
         }
       }
     };
@@ -207,19 +208,18 @@ const VideoPlayer = ({
   const serverLabels = {
     server1: 'Server 1 (MegaPlay)',
     server2: 'Server 2 (Zoko)',
-    server3: 'Server 3 (VidLink)',
-    server4: 'Server 4 (AnimeEmbed)',
+    server3: 'Server 3 (AnimeEmbed)',
   };
 
   const serverCycle = {
-    server1: 'server3',
+    server1: 'server2',
     server2: 'server3',
-    server3: 'server4',
-    server4: 'server1',
+    server3: 'server1',
   };
 
   const alternateServer = serverCycle[activeServer] || 'server1';
-  const alternateServerLabel = serverLabels[alternateServer] || 'Server 1 (MegaPlay)';
+  const alternateServerLabel =
+    serverLabels[alternateServer] || 'Server 1 (MegaPlay)';
 
   const lightsClass = isLightsOff
     ? 'z-[70] shadow-[0_0_80px_rgba(139,92,246,0.55)] ring-1 ring-white/20'
@@ -240,7 +240,8 @@ const VideoPlayer = ({
           <div className="flex items-center gap-2">
             <ExclamationTriangleIcon className="w-5 h-5 text-red-400 shrink-0" />
             <span>
-              {errorMessage || `Streaming error on ${serverLabels[activeServer] || activeServer}.`}
+              {errorMessage ||
+                `Streaming error on ${serverLabels[activeServer] || activeServer}.`}
             </span>
           </div>
           <div className="flex items-center gap-2 shrink-0">

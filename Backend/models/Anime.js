@@ -7,6 +7,10 @@ const animeSchema = new mongoose.Schema({
     unique: true,
     index: true
   },
+  anilistId: {
+    type: Number,
+    index: true
+  },
   title: {
     type: String,
     required: true

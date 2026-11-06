@@ -73,6 +73,7 @@ const transformAnimeData = (media) => {
 
   return {
     malId: media.idMal || media.id,
+    anilistId: media.id || null,
     title: media.title?.english || media.title?.romaji || 'Unknown Title',
     titleEnglish: media.title?.english || null,
     titleJapanese: media.title?.native || null,
@@ -141,7 +142,24 @@ const fetchAnimeById = async (malId, forceRefresh = false) => {
   // Check MongoDB cache first if not forced refresh
   if (!forceRefresh) {
     const cached = await Anime.findOne({ malId: numericId });
-    if (cached) return cached;
+    if (cached) {
+      if (!cached.anilistId) {
+        queryAniList(
+          `query ($idMal: Int) { Media(idMal: $idMal, type: ANIME) { id } }`,
+          { idMal: numericId }
+        )
+          .then((res) => {
+            if (res?.Media?.id) {
+              Anime.updateOne(
+                { malId: numericId },
+                { $set: { anilistId: res.Media.id } }
+              ).exec();
+            }
+          })
+          .catch(() => {});
+      }
+      return cached;
+    }
   }
 
   const query = `
